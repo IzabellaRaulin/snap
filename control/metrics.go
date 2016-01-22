@@ -48,6 +48,7 @@ func errorMetricNotFound(ns []string, ver ...int) error {
 type metricCatalogItem struct {
 	namespace string
 	versions  map[int]core.Metric
+
 }
 
 func (m *metricCatalogItem) Namespace() string {
@@ -57,6 +58,7 @@ func (m *metricCatalogItem) Namespace() string {
 func (m *metricCatalogItem) Versions() map[int]core.Metric {
 	return m.versions
 }
+
 
 type metricType struct {
 	Plugin             *loadedPlugin
@@ -88,7 +90,7 @@ func newMetricType(ns []string, last time.Time, plugin *loadedPlugin) *metricTyp
 }
 
 func (m *metricType) Key() string {
-	return fmt.Sprintf("%s/%d", m.NamespaceAsString(), m.Version())
+	return fmt.Sprintf("%s/%d/%s", m.NamespaceAsString(), m.Version(), m.Source())
 }
 
 func (m *metricType) Namespace() []string {

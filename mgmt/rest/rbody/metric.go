@@ -39,6 +39,7 @@ type Metric struct {
 	LastAdvertisedTimestamp int64         `json:"last_advertised_timestamp,omitempty"`
 	Namespace               string        `json:"namespace,omitempty"`
 	Version                 int           `json:"version,omitempty"`
+	Source					string		  `json:"source,omitempty"`
 	Policy                  []PolicyTable `json:"policy,omitempty"`
 	Href                    string        `json:"href"`
 }
@@ -62,7 +63,7 @@ func (m MetricsReturned) Len() int {
 }
 
 func (m MetricsReturned) Less(i, j int) bool {
-	return (fmt.Sprintf("%s:%d", m[i].Namespace, m[i].Version)) < (fmt.Sprintf("%s:%d", m[j].Namespace, m[j].Version))
+	return (fmt.Sprintf("%s:%d:%s", m[i].Namespace, m[i].Version, m[i].Source)) < (fmt.Sprintf("%s:%d:%s", m[j].Namespace, m[j].Version, m[j].Source))
 }
 
 func (m MetricsReturned) Swap(i, j int) {

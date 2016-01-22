@@ -53,6 +53,7 @@ type APIResponseMeta struct {
 	Message string `json:"message"`
 	Type    string `json:"type"`
 	Version int    `json:"version"`
+	Source int    `json:"source"`
 }
 
 func (a *APIResponse) UnmarshalJSON(b []byte) error {

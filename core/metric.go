@@ -38,7 +38,6 @@ type Metric interface {
 	Config() *cdata.ConfigDataNode
 	LastAdvertisedTime() time.Time
 	Data() interface{}
-	Source() string
 	Labels() []Label
 	Tags() map[string]string
 	Timestamp() time.Time
@@ -47,7 +46,8 @@ type Metric interface {
 // RequestedMetric is a metric requested for collection
 type RequestedMetric interface {
 	Namespace() []string
-	Version() int
+	Version() 	int
+	Source()	string
 }
 
 type CatalogedMetric interface {

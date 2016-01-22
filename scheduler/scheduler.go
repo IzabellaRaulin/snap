@@ -569,6 +569,7 @@ func (s *scheduler) gatherMetricsAndPlugins(wf *schedulerWorkflow) ([]core.Metri
 		mts = append(mts, &metric{
 			namespace: m.Namespace(),
 			version:   m.Version(),
+			source:		m.Source(),
 			config:    wf.configTree.Get(m.Namespace()),
 		})
 	}

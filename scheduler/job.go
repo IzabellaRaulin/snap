@@ -152,6 +152,7 @@ func newCollectorJob(metricTypes []core.RequestedMetric, deadlineDuration time.D
 type metric struct {
 	namespace []string
 	version   int
+	source	  string
 	config    *cdata.ConfigDataNode
 }
 
@@ -167,11 +168,14 @@ func (m *metric) Version() int {
 	return m.version
 }
 
+func (m *metric) Source() string {
+	return m.source
+}
+
 func (m *metric) Data() interface{}             { return nil }
 func (m *metric) Tags() map[string]string       { return nil }
 func (m *metric) Labels() []core.Label          { return nil }
 func (m *metric) LastAdvertisedTime() time.Time { return time.Unix(0, 0) }
-func (m *metric) Source() string                { return "" }
 func (m *metric) Timestamp() time.Time          { return time.Unix(0, 0) }
 
 func (c *collectorJob) Run() {
@@ -190,6 +194,7 @@ func (c *collectorJob) Run() {
 		metrics[i] = &metric{
 			namespace: rmt.Namespace(),
 			version:   rmt.Version(),
+			source:	   rmt.Source(),
 			config:    config,
 		}
 	}

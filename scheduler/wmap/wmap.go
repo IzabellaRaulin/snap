@@ -164,10 +164,15 @@ func (c *CollectWorkflowMapNode) GetMetrics() []Metric {
 		ns := strings.Trim(k, `/`)
 		metrics[i] = Metric{
 			namespace: strings.Split(ns, "/"),
-			version:   v.Version_,
+			version:   v.Version_,			
+			source:	   v.Source_,
 		}
+		fmt.Println("IZA debug metric=", metrics[i])
 		i++
+		
 	}
+	
+	
 	return metrics
 }
 
@@ -290,12 +295,14 @@ func (p *PublishWorkflowMapNode) GetConfigNode() (*cdata.ConfigDataNode, error) 
 }
 
 type metricInfo struct {
-	Version_ int `json:"version"yaml:"version"`
+	Version_ 	int 	`json:"version"yaml:"version"`
+	Source_ 	string 	`json:"source"yaml:"source"`
 }
 
 type Metric struct {
 	namespace []string
 	version   int
+	source	  string
 }
 
 func (m Metric) Namespace() []string {
@@ -304,6 +311,10 @@ func (m Metric) Namespace() []string {
 
 func (m Metric) Version() int {
 	return m.version
+}
+
+func (m Metric) Source() string {
+	return m.source
 }
 
 func isValidNamespaceString(ns string) bool {
