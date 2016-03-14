@@ -27,6 +27,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/pkg/chrono"
+	"os"
 )
 
 // GlobalCacheExpiration the default time limit for which a cache entry is valid.
@@ -122,6 +123,7 @@ func (c *cache) put(key string, m core.Metric) {
 
 func (c *cache) checkCache(mts []core.Metric) (metricsToCollect []core.Metric, fromCache []core.Metric) {
 	for _, mt := range mts {
+		fmt.Fprintf(os.Stderr, "!!!!!!!!! Debug in cache.go checkCache(), mt.Name=%+v\n", mt.Namespace())
 		if hasStar(mt.Namespace()) {
 			// If the namespace has a star it is a wildcard metric and we will check lookaside table
 			lookups, ok := c.lookaside[genKeyFromMetric(mt)]
@@ -170,6 +172,8 @@ func hasStar(s []string) bool {
 func (c *cache) updateCache(mts []core.Metric) {
 	dc := map[string][]string{}
 	for _, mt := range mts {
+		fmt.Fprintf(os.Stderr, "!!!!!!!!! Debug in cache.go, mt.Name=%+v\n", mt.Namespace())
+		fmt.Fprintf(os.Stderr, "!!!!!!!!!! Debug in cache.go, mt.Key=%+v\n", genKeyFromMetric(mt))
 		// cache the individual metric
 		c.put(genKeyFromMetric(mt), mt)
 		// if we have labels, get labled info to put in lookaside

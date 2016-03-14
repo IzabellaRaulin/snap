@@ -24,6 +24,7 @@ import (
 	"fmt"
 	// "strings"
 	"time"
+	"os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/gomit"
@@ -72,6 +73,7 @@ type managesMetrics interface {
 	processesMetrics
 	managesPluginContentTypes
 	ValidateDeps([]core.Metric, []core.SubscribedPlugin) []serror.SnapError
+	ExpandWildCards([]string) ([][]string)
 	SubscribeDeps(string, []core.Metric, []core.Plugin) []serror.SnapError
 	UnsubscribeDeps(string, []core.Metric, []core.Plugin) []serror.SnapError
 }
@@ -566,17 +568,33 @@ func (s *scheduler) gatherMetricsAndPlugins(wf *schedulerWorkflow) ([]core.Metri
 		plugins []core.SubscribedPlugin
 	)
 
+	fmt.Fprintf(os.Stderr, "Debug, ExpandWildCards, in gatherMetricsAndPlugins\n")
+
 	for _, m := range wf.metrics {
-		mts = append(mts, &metric{
-			namespace: m.Namespace(),
+
+		// TODO zobacz co z bledami
+
+		nss := s.metricManager.ExpandWildCards(m.Namespace())
+
+		cnt := 0
+
+		for _, ns:= range nss {
+			mts = append(mts, &metric{
+			namespace: ns,
 			version:   m.Version(),
 			config:    wf.configTree.Get(m.Namespace()),
-		})
+			})
+			cnt++
+		}
+
+
+		fmt.Fprintf(os.Stderr, "Debug in gatherMetricsAndPlugins, for wf.metric=%+v added %d metric(s)\n", m.Namespace(), cnt)
 	}
 	s.walkWorkflow(wf.processNodes, wf.publishNodes, &plugins)
 
 	return mts, plugins
 }
+
 
 func (s *scheduler) walkWorkflow(prnodes []*processNode, pbnodes []*publishNode, plugins *[]core.SubscribedPlugin) {
 	for _, pr := range prnodes {

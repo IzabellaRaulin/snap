@@ -25,6 +25,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"os"
 
 	log "github.com/Sirupsen/logrus"
 
@@ -33,6 +34,7 @@ import (
 	"github.com/intelsdi-x/snap/core/cdata"
 	"github.com/intelsdi-x/snap/core/ctypes"
 	"github.com/intelsdi-x/snap/core/serror"
+	"regexp"
 )
 
 var (
@@ -160,10 +162,11 @@ func (m *metricType) Timestamp() time.Time {
 }
 
 type metricCatalog struct {
-	tree        *MTTrie
-	mutex       *sync.Mutex
-	keys        []string
-	currentIter int
+	tree         *MTTrie
+	mutex        *sync.Mutex
+	keys         []string
+	mKeys        map[string][]string 	// mKeys holds metricCatalog keys which conform to given metric key which can include wildcards
+	currentIter  int
 }
 
 func newMetricCatalog() *metricCatalog {
@@ -173,6 +176,150 @@ func newMetricCatalog() *metricCatalog {
 		mutex:       &sync.Mutex{},
 		currentIter: 0,
 		keys:        k,
+		mKeys: 	     make(map[string][]string),
+	}
+}
+
+
+// TODO still need?
+func (mc *metricCatalog) Keys() ([]string) {
+	return mc.keys
+}
+
+// GetMatchedMetrics returns all matched keys for metric with namespace 'ns'
+func (mc *metricCatalog) GetMatchedMetrics(ns []string) ([][]string, error) {
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+
+	// get metric key (might contain wildcard(s))
+	wkey := getMetricKey(ns)
+
+	if _, exist := mc.mKeys[wkey]; !exist {
+		// if not exist, match `wkey` with cataloged keys
+		mc.updateOrAddNewItemToMatchingMap(wkey)
+	}
+
+	// mkeys means matched metrics keys
+	mkeys := mc.mKeys[wkey]
+
+	// convert matched keys to a slice of namespaces
+	nss := convertKeysToNamespaces(mkeys)
+
+	if len(nss) == 0 {
+		return nil, errorMetricNotFound(ns)
+	}
+
+	return nss, nil
+}
+
+
+func convertKeysToNamespaces(keys []string) ([][]string) {
+	// nss is a slice of slices which holds metrics namespaces
+	nss := [][]string{}
+	for _, key := range keys {
+		ns := getMetricNamespace(key)
+		if len(ns) != 0 {
+			nss = append(nss, ns)
+		}
+	}
+
+	return nss
+}
+
+/*
+// recognizeRequiredTupleItems recognizes tuple with comma between items for which there is requirement that all of them have to be collected
+func recognizeRequiredTupleItems (wkey string) []string {
+	reqItems := []string{}
+
+	regex := regexp.MustCompile(`^[\[]\w+[,]\w+[\]].*$`)
+
+
+	match := regex.FindStringSubmatch(wkey)
+	if match != nil {
+
+	}
+
+}
+*/
+
+// UpdateOrAddNewItemToMatchingMap adds `wkey` and matched for it keys to mKeys map
+func (mc *metricCatalog) updateOrAddNewItemToMatchingMap(wkey string) {
+	matchedKeys := []string{}
+
+	//fmt.Fprintf(os.Stderr, "Debug in /control/metrics.go, AddKeyToMatchingMap\n")
+
+	// for interpreting tuples which are put between square brackets
+
+	// recognize type of tuples ("and" or "or")
+
+	exp := wkey
+	//exp := strings.Replace(wkey, "[", "(", -1)
+	//exp = strings.Replace(exp, "]", ")", -1)
+
+	// wkey contains `.` which should not be interpreted as regexp tokens, but as a single character
+	exp = strings.Replace(exp, ".", "[.]", -1)
+
+	// change `*` into regexp `.*` which matches any characters
+	exp = strings.Replace(exp, "*", ".*", -1)
+
+	regex := regexp.MustCompile("^" + exp + "$")
+
+	for _, key := range mc.keys {
+
+		//fmt.Fprintf(os.Stderr, "Debug match with key=%+v, ", key)
+		match := regex.FindStringSubmatch(key)
+
+		if match == nil {
+			//fmt.Fprintf(os.Stderr, "try next...\n")
+			continue
+		}
+
+		matchedKeys = appendIfMissing(matchedKeys, key)
+
+		//fmt.Fprintf(os.Stderr, "Matched!\n\n\n\n\n")
+	}
+
+	// if "or"
+
+	if len(matchedKeys) == 0 {
+		mc.removeItemFromMatchingMap(wkey)
+	} else {
+		mc.mKeys[wkey] = matchedKeys
+	}
+}
+
+
+
+func (mc *metricCatalog) removeItemFromMatchingMap(wkey string) {
+
+	if _, exist := mc.mKeys[wkey]; exist {
+		delete(mc.mKeys, wkey)
+	}
+}
+
+func (mc *metricCatalog) updateMatchingMap() {
+
+	for wkey := range mc.mKeys{
+		mc.updateOrAddNewItemToMatchingMap(wkey)
+	}
+
+}
+
+func (mc *metricCatalog) removeMatchedKey(key string) {
+	mc.mutex.Lock()
+
+	fmt.Fprintf(os.Stderr, "Debug in /control/metrics.go, AddMatchedKey\n")
+
+	defer mc.mutex.Unlock()
+
+	for wkey, mkeys := range mc.mKeys {
+
+		for index, mkey := range mkeys {
+			if mkey == key {
+				// remove this key under index `i' from slice
+				mc.mKeys[wkey] = append(mkeys[:index], mkeys[index + 1:]...)
+			}
+		}
 	}
 }
 
@@ -202,9 +349,13 @@ func (mc *metricCatalog) AddLoadedMetricType(lp *loadedPlugin, mt core.Metric) e
 }
 
 func (mc *metricCatalog) RmUnloadedPluginMetrics(lp *loadedPlugin) {
+	fmt.Fprintf(os.Stderr, "Debug in metrics.go, RmUnloadedPluginMetrics\n")
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
 	mc.tree.DeleteByPlugin(lp)
+	// todo tutaj musi by update mKey
+
+	mc.updateMatchingMap()
 }
 
 // Add adds a metricType
@@ -218,19 +369,56 @@ func (mc *metricCatalog) Add(m *metricType) {
 	mc.tree.Add(m)
 }
 
-// Get retrieves a metric given a namespace and version.
+// GetMetric retrieves a metric given a namespace and version.
 // If provided a version of -1 the latest plugin will be returned.
-func (mc *metricCatalog) Get(ns []string, version int) (*metricType, error) {
+
+func (mc *metricCatalog) GetMetric(ns []string, version int) (*metricType, error) {
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
+
 	return mc.get(ns, version)
 }
 
-// GetVersions retrieves all versions of a given metric namespace.
-func (mc *metricCatalog) GetVersions(ns []string) ([]*metricType, error) {
-	mc.mutex.Lock()
-	defer mc.mutex.Unlock()
-	return mc.getVersions(ns)
+
+
+// GetMetrics retrieves all metrics given a namespace (can specify many namespaces using wildcard characters) and version.
+// If provided a version of -1 the latest plugin will be returned.
+
+func (mc *metricCatalog) GetMetrics(ns []string, version int) ([]*metricType, error) {
+
+
+	//fmt.Fprintf(os.Stderr, "Debug in /control/metrics.go \n")
+	//fmt.Fprintf(os.Stderr, "Debug in metricCatalog.keys_len=%+v\n", len(mc.keys))
+	//fmt.Fprintf(os.Stderr, "Debug ns=%+v\n", strings.Join(ns, "/"))
+
+
+	mnss, err := mc.GetMatchedMetrics(ns)
+
+	if err != nil {
+		return  nil, err
+	}
+
+
+
+	var mts []*metricType
+
+	for _, mns := range mnss {
+
+		m, err := mc.get(mns, version)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Debug in control/metrics, Cannot get metric with ns=%+v, err=%+v\n", mns, err)
+			continue
+		}
+
+		mts = append(mts,m)
+		//fmt.Fprintf(os.Stderr, "Matched!\n\n\n\n\n")
+	}
+
+
+	//fmt.Fprintf(os.Stderr, "Debug: Matched %d metrics\n", len(mts))
+
+	return mts, nil
 }
 
 // Fetch transactionally retrieves all metrics which fall under namespace ns
@@ -251,9 +439,22 @@ func (mc *metricCatalog) Fetch(ns []string) ([]*metricType, error) {
 	return mtsi, nil
 }
 
+// GetVersions retrieves all versions of a given metric namespace.
+func (mc *metricCatalog) GetVersions(ns []string) ([]*metricType, error) {
+	mc.mutex.Lock()
+	defer mc.mutex.Unlock()
+	return mc.getVersions(ns)
+}
+
+
+
 func (mc *metricCatalog) Remove(ns []string) {
 	mc.mutex.Lock()
 	mc.tree.Remove(ns)
+
+	// todo consider tree
+	key := getMetricKey(ns)
+	mc.removeMatchedKey(key)
 	mc.mutex.Unlock()
 }
 
@@ -322,7 +523,7 @@ func (mc *metricCatalog) Unsubscribe(ns []string, version int) error {
 }
 
 func (mc *metricCatalog) GetPlugin(mns []string, ver int) (*loadedPlugin, error) {
-	m, err := mc.Get(mns, ver)
+	m, err := mc.GetMetric(mns, ver)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"_module": "control",
@@ -334,6 +535,7 @@ func (mc *metricCatalog) GetPlugin(mns []string, ver int) (*loadedPlugin, error)
 	}
 	return m.Plugin, nil
 }
+
 
 func (mc *metricCatalog) get(ns []string, ver int) (*metricType, error) {
 	mts, err := mc.getVersions(ns)
@@ -383,6 +585,10 @@ func (mc *metricCatalog) getVersions(ns []string) ([]*metricType, error) {
 
 func getMetricKey(metric []string) string {
 	return strings.Join(metric, ".")
+}
+
+func getMetricNamespace(key string) []string {
+	return strings.Split(key, ".")
 }
 
 func getLatest(c []*metricType) *metricType {
