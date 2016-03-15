@@ -2,7 +2,7 @@
 http://www.apache.org/licenses/LICENSE-2.0.txt
 
 
-Copyright 2015 Intel Corporation
+Copyright 2015-2016 Intel Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ type managesMetrics interface {
 	publishesMetrics
 	processesMetrics
 	managesPluginContentTypes
+	ExpandWildCards([]string) [][]string
 	ValidateDeps([]core.Metric, []core.SubscribedPlugin) []serror.SnapError
 	SubscribeDeps(string, []core.Metric, []core.Plugin) []serror.SnapError
 	UnsubscribeDeps(string, []core.Metric, []core.Plugin) []serror.SnapError
@@ -567,11 +568,16 @@ func (s *scheduler) gatherMetricsAndPlugins(wf *schedulerWorkflow) ([]core.Metri
 	)
 
 	for _, m := range wf.metrics {
-		mts = append(mts, &metric{
-			namespace: m.Namespace(),
-			version:   m.Version(),
-			config:    wf.configTree.Get(m.Namespace()),
-		})
+		nss := s.metricManager.ExpandWildCards(m.Namespace())
+		cnt := 0
+		for _, ns := range nss {
+			mts = append(mts, &metric{
+				namespace: ns,
+				version:   m.Version(),
+				config:    wf.configTree.Get(m.Namespace()),
+			})
+			cnt++
+		}
 	}
 	s.walkWorkflow(wf.processNodes, wf.publishNodes, &plugins)
 

@@ -62,6 +62,7 @@ func TestAvailablePlugin(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 	})
+
 }
 
 func TestAvailablePlugins(t *testing.T) {

@@ -109,6 +109,11 @@ func (m *mockMetricManager) UnsubscribeDeps(taskID string, mts []core.Metric, pr
 	return nil
 }
 
+// todo
+func (m *mockMetricManager) ExpandWildCards(ns []string) [][]string {
+	return [][]string{ns}
+}
+
 type mockMetricManagerError struct {
 	errs []error
 }
