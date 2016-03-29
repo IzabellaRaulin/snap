@@ -324,6 +324,11 @@ func validateMetricNamespace(ns []string) error {
 		}
 	}
 
+	// plugin should NOT advertise metrics ending with a wildcard
+	if strings.HasSuffix(name, "*") {
+		return errorMetricEndsWithAsterisk(ns)
+	}
+
 	return nil
 }
 

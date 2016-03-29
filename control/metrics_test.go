@@ -653,5 +653,11 @@ func TestMetricNamespaceValidation(t *testing.T) {
 			err := validateMetricNamespace(ns)
 			So(err, ShouldNotBeNil)
 		})
+		Convey("contains unacceptable wildcardat at the end", func() {
+			ns := []string{"mock", "foo", "*"}
+			err := validateMetricNamespace(ns)
+			So(err, ShouldNotBeNil)
+		})
+
 	})
 }
