@@ -189,6 +189,11 @@ func (lp *loadedPlugin) PluginPath() string {
 	return lp.Details.Path
 }
 
+// iza todo
+func (lp *loadedPlugin) Config() *cdata.ConfigDataNode {
+	return &cdata.ConfigDataNode{}
+}
+
 // Key returns plugin type, name and version
 func (lp *loadedPlugin) Key() string {
 	return fmt.Sprintf("%s:%s:%d", lp.TypeName(), lp.Name(), lp.Version())

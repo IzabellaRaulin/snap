@@ -678,10 +678,15 @@ func (p *pluginControl) verifyPlugin(lp *loadedPlugin) error {
 	return nil
 }
 
-func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric, configTree *cdata.ConfigDataTree) ([]core.Metric, []core.SubscribedPlugin, []serror.SnapError) {
+// iza, proposition: gatherMetricTypesGroupedByPlugin which includes groupMetricTypesByPlugin
+func (p *pluginControl) getMetricsAndCollectorsAndMetricsType(requested []core.RequestedMetric, configTree *cdata.ConfigDataTree) ([]core.Metric, []core.SubscribedPlugin, map[string]metricTypes, []serror.SnapError) {
 	newMetrics := []core.Metric{}
 	newPlugins := []core.SubscribedPlugin{}
+	pmts := make(map[string]metricTypes)
+
 	var serrs []serror.SnapError
+	//todo iza, check if configTree can be nil as input, so might it need initialization
+
 	for _, r := range requested {
 
 		fmt.Fprintf(os.Stderr, "\n\n\nIZA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n\n")
@@ -699,6 +704,7 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 		if err != nil {
 			log.WithFields(log.Fields{
 				"_block": "control",
+				"_module": "get-metrics-and-collectors-and-metrics-type",
 				"action": "expanding-requested-metrics",
 				"query":  r.Namespace(),
 				"version":  r.Version(), //todo iza version might be confusing
@@ -720,21 +726,26 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 		}
 
 		if len(newMts) > 0 {
-			for _, m := range newMts {
-				//todo iza - get metrics types from catalog is combined in matching ns
-				// todo iza - so going through mttrie is no needed
-				//// Get metric types from metric catalog
-				//m, err := p.metricCatalog.Get(ns, r.Version())
-				//if err != nil {
-				//	log.WithFields(log.Fields{
-				//		"_block":    "control",
-				//		"action":    "expanding requested metrics",
-				//		"namespace": ns.String(),
-				//		"version":   r.Version(),
-				//	}).Error("error retreiving metric given a namespace and version.")
-				//	serrs = append(serrs, serror.New(fmt.Errorf("error retreiving metric %s:%d", ns.String(), r.Version())))
-				//	continue
-				//}
+			for _, mt := range newMts {
+				// retrieve loaded plugin which exposes this metric type
+				lp := mt.Plugin
+				if lp == nil {
+					log.WithFields(log.Fields{
+						"_block": "control",
+						"_module": "get-metrics-and-collectors-and-metrics-type",
+						"action": "retrieving-loaded-plugin",
+						"ns": mt.Namespace().String(),
+						"version":  mt.Version(),
+					}).Error("error nil pointer to loaded plugin")
+
+					serr := serror.New(errors.New("bad pointer to loaded plugin"), map[string]interface{} {
+							"ns": mt.Namespace().String(),
+							"version": mt.Version(),
+					})
+
+					serrs = append(serrs, serr)
+					continue
+				}
 
 				// in case config tree doesn't have any configuration for current namespace
 				// it's needed to initialize config, otherwise it will stay nil and panic later on
@@ -742,7 +753,7 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 				//todo iza: tu jest config brany z task manifestu
 				//todo iza - here should be made merging global config with task config (now only retrieving task config)
 				// metricConfig is a configuration for requested metric, retrieve from task manifest
-				metricConfig := configTree.Get(m.Namespace().Strings())
+				metricConfig := configTree.Get(mt.Namespace().Strings())
 
 				//todo iza: `m` contains config (Global Config), here only merge it with config from task should be done
 				if metricConfig == nil {
@@ -752,11 +763,22 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 				//todo iza - zmień TO, należy zrobić reversge merge
 
 				//todo iza: metric type is already available, so it could be removed
+
+				returnedMt := plugin.MetricType{
+					Namespace_: mt.Namespace(),
+					LastAdvertisedTime_: mt.LastAdvertisedTime(),
+					Version_: mt.Version(),
+					Tags_: mt.Tags(),
+					Config_: metricConfig,
+					Unit_: mt.Unit(),
+				}
+
 				newMetrics = append(newMetrics, &metric{
-					namespace: m.Namespace(),
-					version: m.Version(),
+					namespace: mt.Namespace(),
+					version: mt.Version(),
 					config: metricConfig,
 				})
+
 
 				//pluginConfig represents configuration declared for plugins (processors, publishers) in their config section
 				pluginConfig := configTree.Get([]string{""})
@@ -764,11 +786,18 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 					pluginConfig = cdata.NewNode()
 				}
 				plugin := subscribedPlugin{
-					name:     m.Plugin.Name(),
-					typeName: m.Plugin.TypeName(),
-					version:  m.Plugin.Version(),
+					name:     lp.Name(),
+					typeName: lp.TypeName(),
+					version:  lp.Version(),
 					config:   pluginConfig,
 				}
+
+				// group metric types by plugin
+				pluginKey := mt.Plugin.Key()
+				pmt := pmts[pluginKey]
+				pmt.plugin = lp
+				pmt.metricTypes = append(pmt.metricTypes, returnedMt)
+				pmts[pluginKey] = pmt
 
 				if !containsPlugin(newPlugins, plugin) {
 					newPlugins = append(newPlugins, plugin)
@@ -795,7 +824,7 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 		}
 	}
 
-	return newMetrics, newPlugins, serrs
+	return newMetrics, newPlugins, pmts, serrs
 }
 
 // SetMonitorOptions exposes monitors options
@@ -942,11 +971,21 @@ func (p *pluginControl) CollectMetrics(id string, allTags map[string]map[string]
 	}
 
 	// Subscription groups are processed anytime a plugin is loaded/unloaded.
+	// todo iza - subscriptionGroups.Get returns expanded metrics with config combined from task manifest and global config settings for plugin)
+	// and specified version (the latest version has been already defined, and no longer equal -1)
+	// so, version handling in groupMetricsByPlugins seems to be not needed
+	// so, reverse merging plugin config (declared in global config) also seems to be not needed (Line 1020)
+	// my suggestion is that p.subscriptionGroups.Get(id) should return grouped metrics per plugin instead core.Metric
+
 	results, serrs, err := p.subscriptionGroups.Get(id)
 	//iza debug
 	for i, res := range results {
 		fmt.Fprintf(os.Stderr, "Iza: p.subscriptionGroups.Get-> result[%d].Namespace=%v\n", i, res.Namespace().String())
 		fmt.Fprintf(os.Stderr, "Iza: p.subscriptionGroups.Get-> result[%d].Version=%v\n", i, res.Version())
+
+		for key, cgfVal := range res.Config().Table() {
+			fmt.Fprintf(os.Stderr, "Iza: p.subscriptionGroups.Get-> result[%d].Config[%s]=%v\n", i, key, cgfVal)
+		}
 	}
 
 	if err != nil {
