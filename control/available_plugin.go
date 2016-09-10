@@ -414,7 +414,10 @@ func (ap *availablePlugins) collectMetrics(pluginKey string, metricTypes []core.
 	}
 
 	// collect metrics
+	//fmt.Fprintf(os.Stderr, "Debug, Iza: metricsToCollect=%v", metricsToCollect)
 	metrics, err := cli.CollectMetrics(metricsToCollect)
+
+	//fmt.Fprintf(os.Stderr, "Debug, Iza: !!! collectedMetrics=%v, err=%v", metrics, err)
 	if err != nil {
 		return nil, serror.New(err)
 	}

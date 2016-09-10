@@ -200,31 +200,34 @@ func (s *subscriptionGroups) ValidateDeps(requested []core.RequestedMetric,
 	configTree *cdata.ConfigDataTree) (serrs []serror.SnapError) {
 
 	// resolve requested metrics and map to collectors
-	metrics, collectors, errs := s.getMetricsAndCollectors(requested, configTree)
+	mts, collectors, errs := s.getMetricsAndCollectors(requested, configTree)
 	if errs != nil {
 		serrs = append(serrs, errs...)
 	}
 
-	// validateMetrics
-	for _, m := range metrics {
-		config := configTree.Get(m.Namespace().Strings())
-		// in case there is not config tree doesn't have configuration for current ns
-		// initialize config node, so it does not panic later on
-		if config == nil {
-			config = cdata.NewNode()
-		}
-		mt := &metric{
-			namespace: m.Namespace(),
-			version:   m.Version(),
-			config:    config,
-		}
+
+	// validateMetricsTypes
+	for _, mt := range mts {
+		//iza no more needed
+		//config := configTree.Get(m.Namespace().Strings())
+		//// in case there is not config tree doesn't have configuration for current ns
+		//// initialize config node, so it does not panic later on
+		//if config == nil {
+		//	config = cdata.NewNode()
+		//}
+		//mt := &metric{
+		//	namespace: m.Namespace(),
+		//	version:   m.Version(),
+		//	config:    config,
+		//}
+
 		errs := s.validateMetric(mt)
 		if len(errs) > 0 {
 			serrs = append(serrs, errs...)
 		}
 	}
 
-	// add collectors to plugins (process and publishers)
+	// add collectors to plugins (processors and publishers)
 	for _, collector := range collectors {
 		plugins = append(plugins, collector)
 	}
@@ -281,7 +284,8 @@ func (p *subscriptionGroups) validatePluginSubscription(pl core.SubscribedPlugin
 
 func (s *subscriptionGroups) validateMetric(
 	metric core.Metric) (serrs []serror.SnapError) {
-	m, err := s.metricCatalog.Get(metric.Namespace(),
+	//todo iza - check using GetMetric here
+	m, err := s.metricCatalog.GetMetric(metric.Namespace(),
 		metric.Version())
 	if err != nil {
 		serrs = append(serrs, serror.New(err, map[string]interface{}{
