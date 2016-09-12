@@ -2,7 +2,7 @@
 http://www.apache.org/licenses/LICENSE-2.0.txt
 
 
-Copyright 2015-2016 Intel Corporation
+Copyright 2015 Intel Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -149,7 +149,6 @@ func (mtt *mttNode) Fetch(ns []string) ([]*metricType, error) {
 		}
 	}
 	if len(mts) == 0 {
-		//todo iza - do sth with that join
 		return nil, errorFetchMetricsNotFound("/" + strings.Join(ns, "/"))
 	}
 	return mts, nil
@@ -172,7 +171,7 @@ func (mtt *mttNode) Remove(ns []string) error {
 	return nil
 }
 
-//todo iza - old or new - make a chocie based on Joel's expectations
+//todo iza - old or new - make a choice based on Joel's expectations
 // GetMetric works like fetch, but only returns the MT at the given node
 // in the queried version (or in the latest if ver < 1) and does NOT gather the node's children.
 func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
@@ -184,9 +183,8 @@ func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
 
 	// there is an expectation that one metric will be returned
 	if len(mts) > 1 {
-		return nil, fmt.Errorf("There is more results than expected one for requested ns %s (version %d) than one. Incoming ns is too ambiguous", "/"+strings.Join(ns, "/"), ver)
+		return nil, fmt.Errorf("Incoming namespace `%s` is too ambiguous", "/"+strings.Join(ns, "/"), ver)
 	}
-
 
 	return mts[0], nil
 }
@@ -233,7 +231,6 @@ func (mtt *mttNode) GetMetrics(ns []string, ver int) ([]*metricType, error) {
 	}
 
 	if len(mts) == 0 {
-		// todo iza: do sth with join
 		return nil, errorMetricNotFound("/"+strings.Join(ns, "/"), ver)
 	}
 

@@ -392,14 +392,14 @@ func TestMetricCatalog(t *testing.T) {
 		Convey("return first key and item in table", func() {
 			mc.Next()
 			key, item := mc.Item()
-			So(key, ShouldEqual, ns[0].Key())
+			So(key, ShouldEqual, ns[0].String())
 			So(item, ShouldResemble, []*metricType{mt[0]})
 		})
 		Convey("return second key and item in table", func() {
 			mc.Next()
 			mc.Next()
 			key, item := mc.Item()
-			So(key, ShouldEqual, ns[1].Key())
+			So(key, ShouldEqual, ns[1].String())
 			So(item, ShouldResemble, []*metricType{mt[1]})
 		})
 		Convey("return third key and item in table", func() {
@@ -407,7 +407,7 @@ func TestMetricCatalog(t *testing.T) {
 			mc.Next()
 			mc.Next()
 			key, item := mc.Item()
-			So(key, ShouldEqual, ns[2].Key())
+			So(key, ShouldEqual, ns[2].String())
 			So(item, ShouldResemble, []*metricType{mt[2]})
 		})
 	})

@@ -24,7 +24,6 @@ import (
 	"fmt"
 
 	"github.com/intelsdi-x/snap/core/cdata"
-	"os"
 )
 
 // Arguments passed to CollectMetrics() for a Collector implementation
@@ -85,10 +84,7 @@ func (c *collectorPluginProxy) CollectMetrics(args []byte, reply *[]byte) error 
 	dargs := &CollectMetricsArgs{}
 	c.Session.Decode(args, dargs)
 
-	fmt.Fprintf(os.Stderr, "Debug, Iza collectorPluginProxy.CollectMetrics()")
 	ms, err := c.Plugin.CollectMetrics(dargs.MetricTypes)
-	fmt.Fprintf(os.Stderr, "Debug, Iza collectorPluginProxy.CollectMetrics(), ms=%v, err=%v", ms, err)
-
 	if err != nil {
 		return errors.New(fmt.Sprintf("CollectMetrics call error : %s", err.Error()))
 	}

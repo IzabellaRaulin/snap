@@ -207,19 +207,6 @@ func (s *subscriptionGroups) ValidateDeps(requested []core.RequestedMetric,
 
 	// validateMetricsTypes
 	for _, mt := range mts {
-		//iza no more needed
-		//config := configTree.Get(m.Namespace().Strings())
-		//// in case there is not config tree doesn't have configuration for current ns
-		//// initialize config node, so it does not panic later on
-		//if config == nil {
-		//	config = cdata.NewNode()
-		//}
-		//mt := &metric{
-		//	namespace: m.Namespace(),
-		//	version:   m.Version(),
-		//	config:    config,
-		//}
-
 		errs := s.validateMetric(mt)
 		if len(errs) > 0 {
 			serrs = append(serrs, errs...)
@@ -283,7 +270,6 @@ func (p *subscriptionGroups) validatePluginSubscription(pl core.SubscribedPlugin
 
 func (s *subscriptionGroups) validateMetric(
 	metric core.Metric) (serrs []serror.SnapError) {
-	//todo iza - check using GetMetric here
 	m, err := s.metricCatalog.GetMetric(metric.Namespace(),
 		metric.Version())
 	if err != nil {

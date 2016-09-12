@@ -69,7 +69,6 @@ func (h *hostnameReaderType) Hostname() (name string, err error) {
 	return os.Hostname()
 }
 
-
 func errorMetricNotFound(ns string, ver ...int) error {
 	if len(ver) > 0 {
 		return fmt.Errorf("Metric not found: %s (version: %d)", ns, ver[0])
@@ -94,8 +93,7 @@ func errorMetricDynamicElementHasNoName(value, ns string) error {
 }
 
 func errorFetchMetricsNotFound(ns string) error {
-	//todo check if infocming ns is "" or something other
-	if ns == "" {
+	if ns == "/" {
 		// when fetching all cataloged metrics failed
 		return fmt.Errorf("Metric catalog is empty (no plugin loaded)")
 	}
@@ -174,7 +172,8 @@ type processesConfigData interface {
 
 func newMetricType(ns core.Namespace, last time.Time, plugin *loadedPlugin) *metricType {
 	return &metricType{
-		Plugin: plugin,
+		Plugin:             plugin,
+
 		namespace:          ns,
 		lastAdvertisedTime: last,
 	}
@@ -246,33 +245,20 @@ func (m *metricType) Unit() string {
 	return m.unit
 }
 
-// mapKey distinguishes items in metricCatalog.mTree map
-// based on metric key and version
-type mapKey struct {
-	mtKey     string
-	mtVersion int
-}
-
-func newMapKey(metricKey string, version int) mapKey {
-	return mapKey{metricKey, version}
-}
-
-func (mk *mapKey) metricNamespace() []string {
-	return strings.Split(mk.mtKey, ".")
-}
-
-func (mk *mapKey) metricVersion() int {
-	return mk.mtVersion
-}
-
 type metricCatalog struct {
 	tree        *MTTrie
 	mutex       *sync.Mutex
 	currentIter int
 	keys        []string
 
-	// mTree holds requested metrics and maps them to the cataloged metrics types
-	mTree map[mapKey][]*metricType
+	// requests holds requested metrics and maps them to the cataloged metrics types
+	requests map[requestedMetric][]*metricType
+}
+
+// requestedMetric is defined by its namespace and version (ver <= 0 means the latest)
+type requestedMetric struct {
+	ns     string
+	ver    int
 }
 
 func newMetricCatalog() *metricCatalog {
@@ -281,12 +267,24 @@ func newMetricCatalog() *metricCatalog {
 		mutex:       &sync.Mutex{},
 		currentIter: 0,
 		keys:        []string{},
-		mTree:       make(map[mapKey][]*metricType),
+		requests:       make(map[requestedMetric][]*metricType),
 	}
 }
 
 func (mc *metricCatalog) Keys() []string {
 	return mc.keys
+}
+
+func (rm *requestedMetric) Namespace() []string {
+	return strings.Split(strings.TrimPrefix(rm.ns, "/"), "/")
+}
+
+func (rm *requestedMetric) Version() int {
+	return rm.ver
+}
+
+func newRequestedMetric(ns string, version int) requestedMetric {
+	return requestedMetric{ns, version}
 }
 
 
@@ -296,28 +294,17 @@ func (mc *metricCatalog) GetMatchedMetricTypes(ns core.Namespace, ver int) ([]*m
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
 
-	mkey := newMapKey(ns.Key(), ver)
+	request := newRequestedMetric(ns.String(), ver)
 
-	if _, exist := mc.mTree[mkey]; !exist {
-		//add item if not exist
-		mc.addItemToMatchingMap(mkey)
+	if _, exist := mc.requests[request]; !exist {
+		// add entry for requested metric if not exist
+		mc.addItemToMatchingMap(request)
 	}
 
-	//todo iza remove it
-	fmt.Fprintf(os.Stderr, "\n!!!!!!!!!!Debug, Iza: GetMatchedMetricTypes start\n\n\n\n\n")
-	for mkey, mvalue := range mc.mTree{
-		fmt.Fprintf(os.Stderr, "Debug, Iza: mkey=", mkey)
-		fmt.Fprintf(os.Stderr, "Debug, Iza: under mkey there is %d elements\n", len(mvalue))
-		for i, j := range mvalue {
-			fmt.Fprintf(os.Stderr, "Debug, Iza: element[%d].Namespace=%v\n", i, j.Namespace())
-			fmt.Fprintf(os.Stderr, "Debug, Iza: element[%d].Version=%v\n", i, j.Version())
-			fmt.Fprintf(os.Stderr, "Debug, Iza: element[%d].Config=%v\n", i, j.Config())
-		}
-	}
-	mts := mc.mTree[mkey]
+	mts := mc.requests[request]
 
 	if len(mts) == 0 {
-		return nil, serror.New(errorMetricNotFound(ns.String(),ver))
+		return nil, serror.New(errorMetricNotFound(ns.String(), ver))
 	}
 
 	return mts, nil
@@ -399,23 +386,23 @@ func specifyInstanceOfDynamicMetric(mt *metricType, ns []string, indexes []int) 
 	return specifiedNamespace
 }
 
-
-// addItemToMatchingMap adds `mkey` to matching map (or updates if `mkey` exists) with corresponding cataloged metrics as a content;
-// if this 'mkey' does not match to any cataloged metrics, it will be removed from matching map
-func (mc *metricCatalog) addItemToMatchingMap(mkey mapKey) {
+// todo iza: proposal of renaming `addRequest` or `addRequestedMetricType`
+// addItemToMatchingMap adds entry for requested metric to matching map (or updates if such request already exists) with corresponding cataloged metrics as a content;
+// if this 'request' does not match to any cataloged metrics, it will be removed from matching map
+func (mc *metricCatalog) addItemToMatchingMap(request requestedMetric) {
 	returnedmts := []*metricType{}
 
 	if availablemts := mc.tree.gatherMetricTypes(); len(availablemts) == 0 {
-		// no metric in the catalog
-		mc.removeItemFromMatchingMap(mkey)
+		// no metric found in the catalog
+		mc.removeItemFromMatchingMap(request)
 		return
 	}
 
 	// resolve queried tuples in metric namespace
-	tnss := findTupleSubmatch(mkey.metricNamespace())
+	tnss := findTupleSubmatch(request.Namespace())
 
 	for _, tns := range tnss {
-		catalogedmts, err := mc.tree.GetMetrics(tns, mkey.metricVersion())
+		catalogedmts, err := mc.tree.GetMetrics(tns, request.Version())
 		if err != nil {
 			// tuple e.q. `(a|b)` works like logic OR
 			// return error only if neither 'a' nor 'b' cannot be found in the metric catalog
@@ -439,8 +426,6 @@ func (mc *metricCatalog) addItemToMatchingMap(mkey mapKey) {
 				ns = catalogedmt.Namespace()
 			}
 
-			fmt.Fprintf(os.Stderr, "Debug, iza specify metric=%s", ns)
-
 			returnedmt := &metricType{
 				Plugin:             catalogedmt.Plugin,
 				namespace:          ns,
@@ -457,99 +442,35 @@ func (mc *metricCatalog) addItemToMatchingMap(mkey mapKey) {
 	}
 
 	if len(returnedmts) == 0 {
-		mc.removeItemFromMatchingMap(mkey)
+		mc.removeItemFromMatchingMap(request)
 		return
 	}
 
-	// add or update item(s) in map under key 'mkey'
-	mc.mTree[mkey] = returnedmts
+	// add or update results for the requested metric
+	mc.requests[request] = returnedmts
 }
 
+// todo iza: proposal of renaming `removeRequest`
 // removeItemFromMatchingMap removes items under the given key from matching map
-func (mc *metricCatalog) removeItemFromMatchingMap(mkey mapKey) {
-	if _, exist := mc.mTree[mkey]; exist {
+func (mc *metricCatalog) removeItemFromMatchingMap(request requestedMetric) {
+	if _, exist := mc.requests[request]; exist {
 		log.WithFields(log.Fields{
 			"_module":   "core",
 			"_file":     "metrics.go,",
 			"_block":    "remove-item-from-matching-map",
-			"_item-key": mkey,
+			"_item-key": request,
 		}).Debug("removing item from matching map under key")
 
-		delete(mc.mTree, mkey)
+		delete(mc.requests, request)
 	}
 }
 
+// todo iza: proposal of renaming `updateRequests`
 // updateMatchingMap updates the entire contents of matching map
 func (mc *metricCatalog) updateMatchingMap() {
-	for mkey := range mc.mTree {
-		mc.addItemToMatchingMap(mkey)
+	for request := range mc.requests {
+		mc.addItemToMatchingMap(request)
 	}
-}
-//end specific
-
-/* STARE
-// matchedNamespaces retrieves all matched items stored in mKey map under the key 'wkey' and converts them to namespaces
-func (mc *metricCatalog) matchedNamespaces(wkey string) ([]core.Namespace, error) {
-	// mkeys means matched metrics keys
-	mkeys := mc.mKeys[wkey]
-
-	if len(mkeys) == 0 {
-		return nil, errorMetricNotFound(getMetricNamespace(wkey).String())
-	}
-
-	// convert matched keys to a slice of namespaces
-	return convertKeysToNamespaces(mkeys), nil
-}
-*/
-
-/* STARE
-// GetQueriedNamespaces returns all matched metrics namespaces for query 'ns' which can contain
-// an asterisk or tuple (refer to query support)
-func (mc *metricCatalog) GetQueriedNamespaces(ns core.Namespace) ([]core.Namespace, error) {
-	mc.mutex.Lock()
-	defer mc.mutex.Unlock()
-
-	// get metric key (might contain wildcard(s))
-	wkey := ns.Key()
-
-	return mc.matchedNamespaces(wkey)
-}
-*/
-
-/* STARE
-// UpdateQueriedNamespaces matches given 'ns' which could contain an asterisk or a tuple and add them to matching map under key 'ns'
-func (mc *metricCatalog) UpdateQueriedNamespaces(ns core.Namespace) {
-	mc.mutex.Lock()
-	defer mc.mutex.Unlock()
-
-	// get metric key (might contain wildcard(s))
-	wkey := ns.Key()
-
-	// adding matched namespaces to map
-	mc.addItemToMatchingMap(wkey)
-}
-*/
-
-
-// matchKeys returns all keys matching with provided key
-func (mc *metricCatalog) matchKeys(wkey string) []string {
-	matchedKeys := []string{}
-
-	// wkey contains `.` which should not be interpreted as regexp tokens, but as a single character
-	exp := strings.Replace(wkey, ".", "[.]", -1)
-
-	// change `*` into regexp `.*` which matches any characters
-	exp = strings.Replace(exp, "*", ".*", -1)
-
-	regex := regexp.MustCompile("^" + exp + "$")
-	for _, key := range mc.keys {
-		match := regex.FindStringSubmatch(key)
-		if match == nil {
-			continue
-		}
-		matchedKeys = appendIfMissing(matchedKeys, key)
-	}
-	return matchedKeys
 }
 
 // validateMetricNamespace validates metric namespace in terms of containing not allowed characters and ending with an asterisk
@@ -618,7 +539,6 @@ func (mc *metricCatalog) AddLoadedMetricType(lp *loadedPlugin, mt core.Metric) e
 	return nil
 }
 
-
 // RmUnloadedPluginMetrics removes plugin metrics which was unloaded,
 // consequently cataloged metrics are changed, so matching map is being updated too
 func (mc *metricCatalog) RmUnloadedPluginMetrics(lp *loadedPlugin) {
@@ -630,7 +550,7 @@ func (mc *metricCatalog) RmUnloadedPluginMetrics(lp *loadedPlugin) {
 	mc.keys = []string{}
 	mts := mc.tree.gatherMetricTypes()
 	for _, m := range mts {
-		mc.keys = append(mc.keys, m.Namespace().Key())
+		mc.keys = append(mc.keys, m.Namespace().String())
 	}
 
 	// update the contents of matching map (mKeys)
@@ -642,7 +562,7 @@ func (mc *metricCatalog) Add(m *metricType) {
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
 
-	key := m.Namespace().Key()
+	key := m.Namespace().String()
 
 	// adding key as a cataloged keys (mc.keys)
 	mc.keys = appendIfMissing(mc.keys, key)
@@ -656,9 +576,7 @@ func (mc *metricCatalog) GetMetric(ns core.Namespace, version int) (*metricType,
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
 
-	//todo iza change it to single one and find place to replace GetMetric to GetMetrics
-	mts, err := mc.tree.GetMetrics(ns.Strings(), version)
-
+	mt, err := mc.tree.GetMetric(ns.Strings(), version)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"_module": "control",
@@ -669,7 +587,7 @@ func (mc *metricCatalog) GetMetric(ns core.Namespace, version int) (*metricType,
 		return nil, err
 	}
 
-	return mts[0], err
+	return mt, err
 }
 
 // GetMetrics retrieves all metrics which fulfill a given namespace and version.
@@ -728,6 +646,7 @@ func (mc *metricCatalog) Fetch(ns core.Namespace) ([]*metricType, error) {
 	}
 	return mtsi, nil
 }
+
 // Remove removes a metricType from the catalog and from matching map
 func (mc *metricCatalog) Remove(ns core.Namespace) {
 	mc.mutex.Lock()
@@ -741,7 +660,7 @@ func (mc *metricCatalog) Remove(ns core.Namespace) {
 // provides the  means to move the iterator forward.
 func (mc *metricCatalog) Item() (string, []*metricType) {
 	key := mc.keys[mc.currentIter-1]
-	ns := strings.Split(key, ".")
+	ns := strings.Split(key, "/")
 	mtsi, _ := mc.tree.GetVersions(ns)
 	var mts []*metricType
 	for _, mt := range mtsi {
