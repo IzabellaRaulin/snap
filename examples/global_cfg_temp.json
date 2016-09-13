@@ -4,6 +4,8 @@
             "collector": {
                 "mock": {
                   "all": {
+		    "name": "iza",
+
                     "fake_global_setting1": "http://localhost:5000/v2.0/",
 		    "fake_global_setting2": 1.5,
 		    "fake_global_setting3": 1024

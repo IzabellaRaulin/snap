@@ -51,7 +51,7 @@ type ManagesSubscriptionGroups interface {
 	Add(id string, requested []core.RequestedMetric,
 		configTree *cdata.ConfigDataTree,
 		plugins []core.SubscribedPlugin) []serror.SnapError
-	Get(id string) ([]*metricType, []serror.SnapError, error)
+	Get(id string) (map[string]metricTypes, []serror.SnapError, error)
 	Remove(id string) []serror.SnapError
 	ValidateDeps(requested []core.RequestedMetric,
 		plugins []core.SubscribedPlugin,
@@ -69,8 +69,8 @@ type subscriptionGroup struct {
 	requestedPlugins []core.SubscribedPlugin
 	// config from request - never updated
 	configTree *cdata.ConfigDataTree
-	// resulting metrics - updated after plugin load/unload events
-	metrics []*metricType
+	// resulting metrics - updated after plugin load/unload events; they are grouped by plugin
+	metrics map[string]metricTypes
 	// resulting plugins - updated after plugin load/unload events
 	plugins []core.SubscribedPlugin
 	// errors generated the last time the subscription was processed
@@ -158,13 +158,13 @@ func (s subscriptionGroups) remove(id string) []serror.SnapError {
 // the caller of the subscription group on the next `CollectMetrics`.
 // Returns `ErrSubscriptionGroupDoesNotExist` when the subscription group
 // does not exist.
-func (s subscriptionGroups) Get(id string) ([]*metricType, []serror.SnapError, error) {
+func (s subscriptionGroups) Get(id string) (map[string]metricTypes, []serror.SnapError, error) {
 	s.Lock()
 	defer s.Unlock()
 	return s.get(id)
 }
 
-func (s subscriptionGroups) get(id string) ([]*metricType, []serror.SnapError, error) {
+func (s subscriptionGroups) get(id string) (map[string]metricTypes, []serror.SnapError, error) {
 	if _, ok := s.subscriptionMap[id]; !ok {
 		return nil, nil, ErrSubscriptionGroupDoesNotExist
 	}
@@ -180,7 +180,7 @@ func (s subscriptionGroups) get(id string) ([]*metricType, []serror.SnapError, e
 // mapping requested metrics to collector plugins and getting a core.Plugin
 // from a core.Requested.Plugin.
 
-// When processing a subscription group the resulting metrics
+// When processing a subscription group the resulting metrics grouped by plugin
 // (subscriptionGroup.metrics) for all subscription groups are updated based
 // on the requested metrics (subscriptionGroup.requestedMetrics).  Similarly
 // the required plugins (subscriptionGroup.plugins) are also updated.
@@ -200,17 +200,20 @@ func (s *subscriptionGroups) ValidateDeps(requested []core.RequestedMetric,
 	configTree *cdata.ConfigDataTree) (serrs []serror.SnapError) {
 
 	// resolve requested metrics and map to collectors
-	mts, collectors, errs := s.getMetricsAndCollectors(requested, configTree)
+	pluginToMetricMap, collectors, errs := s.getMetricsAndCollectors(requested, configTree)
 	if errs != nil {
 		serrs = append(serrs, errs...)
 	}
 
 	// validateMetricsTypes
-	for _, mt := range mts {
-		errs := s.validateMetric(mt)
-		if len(errs) > 0 {
-			serrs = append(serrs, errs...)
+	for _, pmt := range pluginToMetricMap {
+		for _, mt := range pmt.metricTypes {
+			errs := s.validateMetric(mt)
+			if len(errs) > 0 {
+				serrs = append(serrs, errs...)
+			}
 		}
+
 	}
 
 	// add collectors to plugins (processors and publishers)
@@ -334,7 +337,7 @@ func (s *subscriptionGroups) validateMetric(
 
 func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 	// gathers collectors based on requested metrics
-	metrics, plugins, serrs := s.getMetricsAndCollectors(
+	pluginToMetricMap, plugins, serrs := s.getMetricsAndCollectors(
 		s.requestedMetrics, s.configTree)
 	controlLogger.WithFields(log.Fields{
 		"collectors": fmt.Sprintf("%+v", plugins),
@@ -366,7 +369,8 @@ func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 	}
 
 	//updating view
-	s.metrics = metrics
+	// metrics are grouped by plugin
+	s.metrics = pluginToMetricMap
 	s.plugins = plugins
 	s.errors = serrs
 

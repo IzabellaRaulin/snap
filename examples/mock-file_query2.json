@@ -11,7 +11,8 @@
             },
             "config": {
                 "/intel/mock": {
-                    "password": "secret"
+                    "name": "root2",
+                    "password": "secret2"
                 }
             },
             "process": null,
@@ -19,7 +20,7 @@
                         {
                             "plugin_name": "mock-file",                            
                             "config": {
-                                "file": "/tmp/snap_published_mock_file1.log"
+                                "file": "/tmp/snap_published_mock_file2.log"
                     }
                 }
             ]
