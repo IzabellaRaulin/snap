@@ -171,11 +171,10 @@ func (mtt *mttNode) Remove(ns []string) error {
 	return nil
 }
 
-//todo iza - old or new - make a choice based on Joel's expectations
-// GetMetric works like fetch, but only returns the MT at the given node
-// in the queried version (or in the latest if ver < 1) and does NOT gather the node's children.
-func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
 
+// GetMetric works like GetMetrics, but only returns the single MT in the queried version (or in the latest if ver < 1)
+// and does NOT gather the node's children.
+func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
 	mts, err := mtt.GetMetrics(ns, ver)
 	if err != nil {
 		return nil, err
@@ -188,25 +187,6 @@ func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
 
 	return mts[0], nil
 }
-
-// OLD
-// GetMetric works like fetch, but only returns the MT at the given node
-// in the queried version (or in the latest if ver < 1) and does NOT gather the node's children.
-//func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
-//	node, err := mtt.find(ns)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	mt, err := getVersion(node.mts, ver)
-//	if err != nil {
-//		return nil, errorMetricNotFound("/"+strings.Join(ns, "/"), ver)
-//	}
-//
-//	return mt, nil
-//}
-
-// end OLD
 
 // GetMetrics returns all MTs at the given namespace in the queried version (or in the latest if ver < 1)
 // and does gather all the node's descendants if the namespace ends with an asterisk

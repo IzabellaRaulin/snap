@@ -56,8 +56,7 @@ type ManagesSubscriptionGroups interface {
 	ValidateDeps(requested []core.RequestedMetric,
 		plugins []core.SubscribedPlugin,
 		configTree *cdata.ConfigDataTree) (serrs []serror.SnapError)
-	validateMetric(
-		metric core.Metric) (serrs []serror.SnapError)
+	validateMetric(metric core.Metric) (serrs []serror.SnapError)
 }
 
 type subscriptionGroup struct {
@@ -213,7 +212,6 @@ func (s *subscriptionGroups) ValidateDeps(requested []core.RequestedMetric,
 				serrs = append(serrs, errs...)
 			}
 		}
-
 	}
 
 	// add collectors to plugins (processors and publishers)
@@ -273,8 +271,8 @@ func (p *subscriptionGroups) validatePluginSubscription(pl core.SubscribedPlugin
 
 func (s *subscriptionGroups) validateMetric(
 	metric core.Metric) (serrs []serror.SnapError) {
-	m, err := s.metricCatalog.GetMetric(metric.Namespace(),
-		metric.Version())
+
+	m, err := s.metricCatalog.GetMetric(metric.Namespace(), metric.Version())
 	if err != nil {
 		serrs = append(serrs, serror.New(err, map[string]interface{}{
 			"name":    metric.Namespace().String(),
@@ -337,8 +335,7 @@ func (s *subscriptionGroups) validateMetric(
 
 func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 	// gathers collectors based on requested metrics
-	pluginToMetricMap, plugins, serrs := s.getMetricsAndCollectors(
-		s.requestedMetrics, s.configTree)
+	pluginToMetricMap, plugins, serrs := s.getMetricsAndCollectors(s.requestedMetrics, s.configTree)
 	controlLogger.WithFields(log.Fields{
 		"collectors": fmt.Sprintf("%+v", plugins),
 		"metrics":    fmt.Sprintf("%+v", s.requestedMetrics),

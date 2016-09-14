@@ -27,6 +27,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/pkg/chrono"
+	"strings"
 )
 
 // GlobalCacheExpiration the default time limit for which a cache entry is valid.
@@ -66,6 +67,15 @@ func (c *cache) get(ns string, version int) interface{} {
 	)
 
 	key := fmt.Sprintf("%v:%v", ns, version)
+
+	if strings.Contains(key,"*") {
+		cacheLog.WithFields(log.Fields{
+			"namespace": key,
+			"_block":    "get",
+		}).Debug(fmt.Sprintf("cache omit [%s]", key))
+		return nil
+	}
+
 	if cell, ok = c.table[key]; ok && chrono.Chrono.Now().Sub(cell.time) < c.ttl {
 		cell.hits++
 		cacheLog.WithFields(log.Fields{
@@ -95,6 +105,15 @@ func (c *cache) get(ns string, version int) interface{} {
 
 func (c *cache) put(ns string, version int, m interface{}) {
 	key := fmt.Sprintf("%v:%v", ns, version)
+
+	if strings.Contains(key,"*") {
+		cacheLog.WithFields(log.Fields{
+			"namespace": key,
+			"_block":    "put",
+		}).Debug(fmt.Sprintf("cache omit [%s]", key))
+		return
+	}
+
 	switch metric := m.(type) {
 	case core.Metric:
 		if _, ok := c.table[key]; ok {
@@ -153,10 +172,12 @@ type listMetricInfo struct {
 }
 
 func (c *cache) updateCache(mts []core.Metric) {
-	dc := map[string]*listMetricInfo{}
+	//dc := map[string]*listMetricInfo{}
 	for _, mt := range mts {
+		/* todo iza - show it
 		isDynamic, idx := mt.Namespace().IsDynamic()
 		if isDynamic {
+			fmt.Fprintf(os.Stderr, "Debug, Iza: Caching dynamic metric, mt.Namespace=%v\n", mt.Namespace().String())
 			// cache dynamic metrics
 			dynNS := make(core.Namespace, len(mt.Namespace()))
 			copy(dynNS, mt.Namespace())
@@ -173,14 +194,16 @@ func (c *cache) updateCache(mts []core.Metric) {
 			}
 			dc[key].metrics = append(dc[key].metrics, mt)
 			continue
-		}
+		}*/
 		// cache the individual metric
 		c.put(mt.Namespace().String(), mt.Version(), mt)
 	}
+
 	// write our dynamic metrics to the cache.
-	for _, v := range dc {
-		c.put(v.namespace, v.version, v.metrics)
-	}
+	//for _, v := range dc {
+	//	c.put(v.namespace, v.version, v.metrics)
+	//}
+
 }
 
 func (c *cache) allCacheHits() uint64 {
