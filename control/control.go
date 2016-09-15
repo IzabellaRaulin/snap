@@ -676,13 +676,9 @@ func (p *pluginControl) verifyPlugin(lp *loadedPlugin) error {
 
 // getMetricsAndCollectors returns metrics to be collected grouped by plugin and collectors which are used to collect all of them
 func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric, configTree *cdata.ConfigDataTree) (map[string]metricTypes, []core.SubscribedPlugin, []serror.SnapError) {
-
 	newMetricsGroupedByPlugin := make(map[string]metricTypes)
 	newPlugins := []core.SubscribedPlugin{}
-
-
 	var serrs []serror.SnapError
-
 	for _, r := range requested {
 		// get all metric types available in metricCatalog which fulfill the requested namespace and version (if ver <=0 the latest version will be taken)
 		newMetrics, err := p.metricCatalog.GetMetrics(r.Namespace(), r.Version())
@@ -693,7 +689,6 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 				"query":  r.Namespace(),
 				"err": err,
 			}).Error("error matching requested namespace with metric catalog")
-
 			serrs = append(serrs, serror.New(err))
 			continue
 		}
@@ -709,36 +704,14 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 		}
 
 		for _, mt := range newMetrics {
-
-
-			//DEBUG todo iza remove it
-			if mt.config == nil {
-				fmt.Fprintf(os.Stderr, "Debug, Iza BEFORE catalogmt.cfg was empty")
-			} else {
-				fmt.Fprintf(os.Stderr, "Debug, Iza BEFORE catalogmt.cfg has %d items\n", len(mt.config.Table()))
-				for key, val := range mt.Config().Table(){
-					fmt.Fprintf(os.Stderr, "Debug, Iza BEFORE catalogmt.cfg[%s]=%v\n", key, val)
-				}
-			}
-
-
 			// in case config tree doesn't have any configuration for current namespace
 			// it's needed to initialize config, otherwise it will stay nil and panic later on
-			metricConfig := configTree.Get(mt.Namespace().Strings())
-			if metricConfig == nil {
-				metricConfig = cdata.NewNode()
+			cfg := configTree.Get(mt.Namespace().Strings())
+			if cfg == nil {
+				cfg = cdata.NewNode()
 			}
 
-			//todo iza - check if that is needed
-
-			returnedmt := plugin.MetricType{
-				Namespace_:          mt.Namespace(),
-				LastAdvertisedTime_: mt.LastAdvertisedTime(),
-				Version_:            mt.Version(),
-				Tags_:               mt.Tags(),
-				Config_:             metricConfig,
-				Unit_:               mt.Unit(),
-			}
+			mt.config = cfg
 
 			// loaded plugin which exposes the metric
 			lp := mt.Plugin
@@ -749,60 +722,21 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 
 			// pmt (plugin-metric-type) contains plugin details and metrics types grouped to this plugin
 			pmt.plugin = lp
-			pmt.metricTypes = append(pmt.metricTypes, returnedmt)
+			pmt.metricTypes = append(pmt.metricTypes, mt)
 			newMetricsGroupedByPlugin[key] = pmt
 
-
-			//DEBUG //todo iza debug, remove it
-			fmt.Fprintf(os.Stderr, "\n\n\nDebug, Iza:= config for metric=%s\n", mt.Namespace().String())
-
-			for key, val := range metricConfig.Table(){
-				fmt.Fprintf(os.Stderr, "Debug, Iza cfg[%s]=%v\n", key, val)
-			}
-
-
-			catalogmts, err := p.metricCatalog.GetMetrics(mt.Namespace(), mt.Version())
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Debug, Iza 1")
-				panic(errors.New("xx"))
-			}
-			if len(catalogmts) >1 {
-				fmt.Fprintf(os.Stderr, "Debug, Iza 2")
-				panic(errors.New("xxx"))
-			}
-			catalogmt := catalogmts[0]
-			if catalogmt.config == nil {
-				fmt.Fprintf(os.Stderr, "Debug, Iza After catalogmt.cfg is empty")
-			} else {
-				fmt.Fprintf(os.Stderr, "Debug, Iza AFTER catalogmt.cfg has %d items\n", len(catalogmt.config.Table()))
-				for key, val := range catalogmt.Config().Table(){
-					fmt.Fprintf(os.Stderr, "Debug, Iza AFTER catalogmt.cfg[%s]=%v\n", key, val)
-				}
-			}
-
-
-
-			// todo iza - ask why whole config is gathered
-			pluginConfig := configTree.Get([]string{""})
-
-			if pluginConfig == nil {
-				pluginConfig = cdata.NewNode()
-			}
 			plugin := subscribedPlugin{
 				name:     lp.Name(),
 				typeName: lp.TypeName(),
 				version:  lp.Version(),
-				config:   pluginConfig,
+				config:   cdata.NewNode(),
 			}
 
 			if !containsPlugin(newPlugins, plugin) {
 				newPlugins = append(newPlugins, plugin)
 			}
 		}
-
 	}
-
-	//todo iza - ask about that
 	if controlLogger.Level >= log.DebugLevel {
 		for _, pmt := range newMetricsGroupedByPlugin {
 			for _, m := range pmt.metricTypes {
@@ -814,7 +748,6 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 			}
 
 		}
-
 		for _, p := range newPlugins {
 			log.WithFields(log.Fields{
 				"_block": "control",
@@ -826,7 +759,6 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 
 	return newMetricsGroupedByPlugin, newPlugins, serrs
 }
-
 
 // SetMonitorOptions exposes monitors options
 func (p *pluginControl) SetMonitorOptions(options ...monitorOption) {
@@ -871,7 +803,6 @@ func (p *pluginControl) FetchMetrics(ns core.Namespace, version int) ([]core.Cat
 	}
 	cmt := make([]core.CatalogedMetric, 0, len(mts))
 	nsMap := map[string]struct{}{}
-
 	for _, mt := range mts {
 		if version > 0 {
 			// a version is specified
@@ -894,7 +825,6 @@ func (p *pluginControl) FetchMetrics(ns core.Namespace, version int) ([]core.Cat
 
 		}
 	}
-
 	return cmt, nil
 }
 
@@ -949,9 +879,11 @@ func (p *pluginControl) GetMetrics(ns core.Namespace, ver int) ([]core.Cataloged
 	}
 
 	rmts := make([]core.CatalogedMetric, len(mts))
+
 	for i, m := range mts {
 		rmts[i] = m
 	}
+
 	return rmts, nil
 
 }
@@ -963,9 +895,11 @@ func (p *pluginControl) GetMetricVersions(ns core.Namespace) ([]core.CatalogedMe
 	}
 
 	rmts := make([]core.CatalogedMetric, len(mts))
+
 	for i, m := range mts {
 		rmts[i] = m
 	}
+
 	return rmts, nil
 }
 
@@ -981,7 +915,6 @@ func (p *pluginControl) MetricExists(mns core.Namespace, ver int) bool {
 // of metrics and errors.  If an error is encountered no metrics will be
 // returned.
 func (p *pluginControl) CollectMetrics(id string, allTags map[string]map[string]string) (metrics []core.Metric, errs []error) {
-
 	// If control is not started we don't want tasks to be able to
 	// go through a workflow.
 	if !p.Started {
@@ -990,7 +923,6 @@ func (p *pluginControl) CollectMetrics(id string, allTags map[string]map[string]
 
 	// Subscription groups are processed anytime a plugin is loaded/unloaded.
 	pluginToMetricMap, serrs, err := p.subscriptionGroups.Get(id)
-
 	if err != nil {
 		controlLogger.WithFields(log.Fields{
 			"_block":                "CollectorMetrics",
@@ -1026,7 +958,9 @@ func (p *pluginControl) CollectMetrics(id string, allTags map[string]map[string]
 
 	// For each available plugin call available plugin using RPC client and wait for response (goroutines)
 	for pluginKey, pmt := range pluginToMetricMap {
+
 		wg.Add(1)
+
 		go func(pluginKey string, mt []core.Metric) {
 			mts, err := p.pluginRunner.AvailablePlugins().collectMetrics(pluginKey, mt, id)
 			if err != nil {
@@ -1074,18 +1008,33 @@ func (p *pluginControl) PublishMetrics(metrics []core.Metric, config map[string]
 	if !p.Started {
 		return []error{ErrControllerNotStarted}
 	}
+
+	////todo debug iza
+	//fmt.Fprintf(os.Stderr, "Debug, Iza !1.!PublishMetrics!! config has %d items\n", len(config))
+	//
+	//for key, val := range config{
+	//	fmt.Fprintf(os.Stderr, "Debug, Iza 1.!!PublishMetrics!! publish.config[%s]=%v\n", key, val)
+	//}
+
 	// merge global plugin config into the config for this request
 	// without over-writing the task specific config
-	cfg := p.Config.Plugins.getPluginConfigDataNode(core.PublisherPluginType, pluginName, pluginVersion).Table()
-	merged := make(map[string]ctypes.ConfigValue)
-	for k, v := range cfg {
-		merged[k] = v
-	}
-	for k, v := range config {
-		merged[k] = v
-	}
+	//cfg := p.Config.Plugins.getPluginConfigDataNode(core.PublisherPluginType, pluginName, pluginVersion).Table()
 
-	return p.pluginRunner.AvailablePlugins().publishMetrics(metrics, pluginName, pluginVersion, merged, taskID)
+	//fmt.Fprintf(os.Stderr, "Debug, Iza 2.!!PublishMetrics!! global config has %d items\n", len(cfg))
+	//
+	//for key, val := range cfg{
+	//	fmt.Fprintf(os.Stderr, "Debug, Iza !!PublishMetrics!! global config[%s]=%v\n", key, val)
+	//}
+
+	//merged := make(map[string]ctypes.ConfigValue)
+	//for k, v := range cfg {
+	//	merged[k] = v
+	//}
+	//for k, v := range config {
+	//	merged[k] = v
+	//}
+
+	return p.pluginRunner.AvailablePlugins().publishMetrics(metrics, pluginName, pluginVersion, config, taskID)
 }
 
 // ProcessMetrics
@@ -1097,16 +1046,16 @@ func (p *pluginControl) ProcessMetrics(metrics []core.Metric, config map[string]
 	}
 	// merge global plugin config into the config for this request
 	// without over-writing the task specific config
-	cfg := p.Config.Plugins.getPluginConfigDataNode(core.ProcessorPluginType, pluginName, pluginVersion).Table()
-	merged := make(map[string]ctypes.ConfigValue)
-	for k, v := range cfg {
-		merged[k] = v
-	}
-	for k, v := range config {
-		merged[k] = v
-	}
+	//cfg := p.Config.Plugins.getPluginConfigDataNode(core.ProcessorPluginType, pluginName, pluginVersion).Table()
+	//merged := make(map[string]ctypes.ConfigValue)
+	//for k, v := range cfg {
+	//	merged[k] = v
+	//}
+	//for k, v := range config {
+	//	merged[k] = v
+	//}
 
-	return p.pluginRunner.AvailablePlugins().processMetrics(metrics, pluginName, pluginVersion, merged, taskID)
+	return p.pluginRunner.AvailablePlugins().processMetrics(metrics, pluginName, pluginVersion, config, taskID)
 }
 
 func (p *pluginControl) SetAutodiscoverPaths(paths []string) {

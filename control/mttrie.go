@@ -165,26 +165,24 @@ func (mtt *mttNode) Remove(ns []string) error {
 	if err != nil {
 		return err
 	}
-
+	// remove node from parent
 	delete(parent.children, ns[len(ns)-1:][0])
 
 	return nil
 }
 
 
-// GetMetric works like GetMetrics, but only returns the single MT in the queried version (or in the latest if ver < 1)
+// GetMetric works like GetMetrics, but only returns the single MT in the requested version (or in the latest if ver < 1)
 // and does NOT gather the node's children.
 func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
 	mts, err := mtt.GetMetrics(ns, ver)
 	if err != nil {
 		return nil, err
 	}
-
-	// there is an expectation that one metric will be returned
+	// there is an expectation that only one metric should be fitted
 	if len(mts) > 1 {
 		return nil, fmt.Errorf("Incoming namespace `%s` is too ambiguous", "/"+strings.Join(ns, "/"), ver)
 	}
-
 	return mts[0], nil
 }
 
@@ -202,18 +200,14 @@ func (mtt *mttNode) GetMetrics(ns []string, ver int) ([]*metricType, error) {
 		// choose the queried version of metric types (or the latest if ver < 1)
 		// and concatenate them into a single slice
 		mt, err := getVersion(node.mts, ver)
-
 		if err != nil {
 			continue
 		}
-
 		mts = append(mts, mt)
 	}
-
 	if len(mts) == 0 {
 		return nil, errorMetricNotFound("/"+strings.Join(ns, "/"), ver)
 	}
-
 	return mts, nil
 }
 
@@ -230,11 +224,9 @@ func (mtt *mttNode) GetVersions(ns []string) ([]*metricType, error) {
 			mts = append(mts, mt)
 		}
 	}
-
 	if len(mts) == 0 {
 		return nil, errorMetricNotFound("/" + strings.Join(ns, "/"))
 	}
-
 	return mts, nil
 }
 
@@ -246,13 +238,13 @@ func (mtt *mttNode) fetch(ns []string) []*mttNode {
 	}
 
 	var children []*mttNode
+
 	if node.mts != nil {
 		children = append(children, node)
 	}
 	if node.children != nil {
 		children = gatherDescendants(children, node)
 	}
-
 	return children
 }
 
@@ -260,8 +252,8 @@ func (mtt *mttNode) fetch(ns []string) []*mttNode {
 // It is useful e.g. to locate the right place to add new metric type into tree with the given namespace
 func (mtt *mttNode) walk(ns []string) (*mttNode, int) {
 	parent := mtt
-
 	var pp *mttNode
+
 	for i, n := range ns {
 		if parent.children == nil {
 			return parent, i
@@ -269,11 +261,11 @@ func (mtt *mttNode) walk(ns []string) (*mttNode, int) {
 
 		pp = parent
 		parent = parent.children[n]
+
 		if parent == nil {
 			return pp, i
 		}
 	}
-
 	return parent, len(ns)
 }
 
@@ -285,29 +277,23 @@ func (mtt *mttNode) search(nodes []*mttNode, ns []string) []*mttNode {
 	if parent.children == nil {
 		return nodes
 	}
-
 	if len(ns) == 1 {
 		// the last element of ns is under searching process
-
 		switch ns[0] {
 		case "*":
 			// fetch all descendants when wildcard ends namespace
 			children = parent.fetch([]string{})
-
 		default:
 			children = parent.gatherChildren(ns[0])
 		}
-
 		nodes = append(nodes, children...)
 		return nodes
 	}
-
 	children = parent.gatherChildren(ns[0])
 
 	for _, child := range children {
 		nodes = child.search(nodes, ns[1:])
 	}
-
 	return nodes
 }
 
@@ -339,11 +325,9 @@ func (mtt *mttNode) gatherChildren(name string) []*mttNode {
 			child = mtt.children["*"]
 
 		}
-
 		if child != nil {
 			children = append(children, child)
 		}
-
 	}
 	return children
 }
@@ -359,7 +343,6 @@ func gatherDescendants(descendants []*mttNode, node *mttNode) []*mttNode {
 		if child.children != nil {
 			descendants = gatherDescendants(descendants, child)
 		}
-
 	}
 	return descendants
 }
@@ -386,7 +369,6 @@ func getVersion(mts map[int]*metricType, ver int) (*metricType, error) {
 	if len(mts) == 0 {
 		return nil, errMetricNotFound
 	}
-
 	if ver > 0 {
 		// a version IS given
 		if mt, exist := mts[ver]; exist {
@@ -394,7 +376,6 @@ func getVersion(mts map[int]*metricType, ver int) (*metricType, error) {
 		}
 		return nil, errMetricNotFound
 	}
-
-	// ver is less than or equal to 0 get the latest
+	// or get the latest
 	return getLatest(mts), nil
 }

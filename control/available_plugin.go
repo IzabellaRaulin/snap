@@ -388,29 +388,7 @@ func (ap *availablePlugins) collectMetrics(pluginKey string, metricTypes []core.
 		return nil, errors.New("Plugin strategy not set")
 	}
 
-
-	//todo iza
-	// fmt.Fprintf(os.Stderr, "Debug, Iza: 1.availablePlugins.collectMetrics, len(incoming metricTypes)=%d\n", len(metricTypes))
-	//for i, mt := range metricTypes {
-	//	fmt.Fprintf(os.Stderr, "Debug, Iza: 1.availablePlugins.collectMetrics: mt[%d].Namespace=%s\n", i, mt.Namespace().String())
-	//	fmt.Fprintf(os.Stderr, "Debug, Iza: 1.availablePlugins.collectMetrics: mt[%d].Cfg[user]=%v\n", i, mt.Config().Table()["user"])
-	//}
-
 	metricsToCollect, metricsFromCache := pool.CheckCache(metricTypes, taskID)
-
-	//todo iza
-	//fmt.Fprintf(os.Stderr, "Debug, Iza: 2.availablePlugins.collectMetrics, len(metricsToCollect)=%d\n", len(metricsToCollect))
-	//for i, mt := range metricsToCollect {
-	//	fmt.Fprintf(os.Stderr, "Debug, Iza: 2.availablePlugins, metricsToCollect: mt[%d].Namespace=%s\n", i, mt.Namespace().String())
-	//	fmt.Fprintf(os.Stderr, "Debug, Iza: 2.availablePlugins, metricsToCollect: mt[%d].Cfg[user]=%v\n", i, mt.Config().Table()["user"])
-	//}
-
-	//todo iza
-	//fmt.Fprintf(os.Stderr, "Debug, Iza: 3.availablePlugins.collectMetrics, len(mmetricsFromCache)=%d\n", len(metricsFromCache))
-	//for i, mt := range metricsFromCache {
-	//	fmt.Fprintf(os.Stderr, "Debug, Iza: 3.availablePlugins, metricsFromCache : mt[%d].Namespace=%s\n", i, mt.Namespace().String())
-	//	fmt.Fprintf(os.Stderr, "Debug, Iza: 3.availablePlugins, metricsFromCache : mt[%d].Cfg[user]=%v\n", i, mt.Config().Table()["user"])
-	//}
 
 	if len(metricsToCollect) == 0 {
 		return metricsFromCache, nil

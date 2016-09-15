@@ -44,16 +44,10 @@ const (
 	tupleSeparator = "|"
 )
 
-
 var (
 	errMetricNotFound   = errors.New("metric not found")
 	errEmptyMetricCatalog = errors.New("metric catalog is empty, no plugin loaded")
 	errNegativeSubCount = serror.New(errors.New("subscription count cannot be < 0"))
-	notAllowedChars     = map[string][]string{
-		"spaces":       {" "},
-		"others":       {tuplePrefix, tupleSuffix, tupleSeparator},
-	}
-
 	hostnameReader hostnamer
 )
 
@@ -258,7 +252,7 @@ func (mc *metricCatalog) AddLoadedMetricType(lp *loadedPlugin, mt core.Metric) e
 			"_module": "control",
 			"_file":   "metrics.go,",
 			"_block":  "add-loaded-metric-type",
-			"error":   fmt.Errorf("Metric namespace %s contains not allowed characters", mt.Namespace()),
+			"error":   fmt.Errorf("Metric namespace %s is invalid", mt.Namespace()),
 		}).Error("error adding loaded metric type")
 		return err
 	}
@@ -340,7 +334,6 @@ func (mc *metricCatalog) GetMetric(requested core.Namespace, version int) (*metr
 		if ns.String() != requested.String() {
 			ns = specifyInstanceOfDynamicMetric(ns, requested)
 		}
-
 	}
 		returnedmt := &metricType{
 				Plugin:             catalogedmt.Plugin,
@@ -353,8 +346,6 @@ func (mc *metricCatalog) GetMetric(requested core.Namespace, version int) (*metr
 				unit:               catalogedmt.Unit(),
 				description:        catalogedmt.Description(),
 		}
-
-
 	return returnedmt, nil
 }
 
@@ -370,22 +361,18 @@ func (mc *metricCatalog) GetMetrics(requested core.Namespace, version int) ([]*m
 	requestedNss := findTuplesMatches(requested)
 	for _, rns := range requestedNss {
 		catalogedmts, err := mc.tree.GetMetrics(rns.Strings(), version)
-
 		if err != nil {
 			// tuple e.q. `(a|b)` works like logic OR
 			// return error only if neither 'a' nor 'b' cannot be found in the metric catalog
 			// here only log error and check the next tuple
-
 			log.WithFields(log.Fields{
 				"_module": "control",
 				"_file":   "metrics.go,",
 				"_block":  "get-metrics",
 				"error":   err,
 			}).Error("error getting metric")
-
 			continue
 		}
-
 		for _, catalogedmt := range catalogedmts {
 			ns := catalogedmt.Namespace()
 
@@ -395,7 +382,6 @@ func (mc *metricCatalog) GetMetrics(requested core.Namespace, version int) ([]*m
 					ns = specifyInstanceOfDynamicMetric(ns, rns)
 				}
 			}
-
 			returnedmt := &metricType{
 				Plugin:             catalogedmt.Plugin,
 				namespace:          ns,
@@ -407,16 +393,12 @@ func (mc *metricCatalog) GetMetrics(requested core.Namespace, version int) ([]*m
 				unit:               catalogedmt.Unit(),
 				description:        catalogedmt.Description(),
 			}
-
 			returnedmts = appendIfUnique(returnedmts, returnedmt)
-
 		}
 	}
-
 	if len(returnedmts) == 0 {
 		return nil, fmt.Errorf("Metrics not found below a given namespace: %s (version: %d)", requested.String(), version)
 	}
-
 	return returnedmts, nil
 }
 
@@ -435,7 +417,6 @@ func (mc *metricCatalog) GetVersions(ns core.Namespace) ([]*metricType, error) {
 		}).Error("error getting plugin version")
 		return nil, err
 	}
-
 	return mts, nil
 }
 
@@ -612,7 +593,6 @@ func addStandardAndWorkflowTags(m core.Metric, allTags map[string]map[string]str
 // if tuple was found, returns true and recognized tuple's items
 func containTuple(nsElement string) (bool, []string) {
 	tupleItems := []string{}
-
 	if strings.HasPrefix(nsElement, tuplePrefix) && strings.HasSuffix(nsElement, tupleSuffix) && strings.Contains(nsElement, tupleSeparator) {
 			if strings.ContainsAny(nsElement, "*") {
 				// an asterisk covers all tuples cases (eg. /intel/mock/(host0|host1|*)/baz)
@@ -632,37 +612,30 @@ func containTuple(nsElement string) (bool, []string) {
 // if the incoming namespace does not contain any tuple, return the incoming namespace as the only item in output slice
 // if the incoming namespace contains a tuple, return the copies of incoming namespace with appropriate values set to namespaces' elements
 func findTuplesMatches(incomingNs core.Namespace) []core.Namespace {
-
-	// How it works, example:
-	// for incoming namespace:
-	// "intel", "mock", "(host0|host1)", "(baz|bar)"
+	// How it works, exemplary incoming namespace:
+	// 	"intel", "mock", "(host0|host1)", "(baz|bar)"
 	//
 	// the following 4 namespaces will be returned:
-	// "intel", "mock", "host0", "baz"
-	// "intel", "mock", "host1", "baz"
-	// "intel", "mock", "host0", "bar"
-	// "intel", "mock", "host1", "bar"
+	// 	"intel", "mock", "host0", "baz"
+	// 	"intel", "mock", "host1", "baz"
+	// 	"intel", "mock", "host0", "bar"
+	// 	"intel", "mock", "host1", "bar"
 
 	matchedItems := make(map[int][]string)
 	numOfPossibleCombinations := 1
 
-	elements := incomingNs.Strings()
-	nsLength := len(incomingNs.Strings())
-
-	for index, element := range elements {
+	for index, element := range incomingNs.Strings() {
 		match := []string{}
 		if ok, tupleItems := containTuple(element); ok {
 			match = tupleItems
 		} else {
 			match = []string{element}
 		}
-
 		// store matched items under current index of incoming namespace element
 		matchedItems[index] = append(matchedItems[index], match...)
 
 		// number of possible combinations increases N=len(match) times
 		numOfPossibleCombinations = numOfPossibleCombinations * len(match)
-
 	}
 
 	//prepare slice for returned namespaces (results of tuple find)
@@ -671,21 +644,18 @@ func findTuplesMatches(incomingNs core.Namespace) []core.Namespace {
 	// initialize each of returned namespaces as a copy of incoming namespace
 	// (copied original value, name and description of their elements)
 	for i := 0; i < numOfPossibleCombinations; i++ {
-		returnedNs := make([]core.NamespaceElement, nsLength)
+		returnedNs := make([]core.NamespaceElement, len(incomingNs.Strings()))
 		copy(returnedNs, incomingNs)
 		returnedNss[i] = returnedNs
 	}
-
 	// set appropriate value to namespace's elements
 	for index, items := range matchedItems {
 		for i := range returnedNss {
 			// retrieve the matched item (when 'i' exceeds the number of matched items, start from beginning)
 			item := items[i%len(items)]
-
 			returnedNss[i][index].Value = item
 		}
 	}
-
 	return returnedNss
 }
 
@@ -704,7 +674,6 @@ func specifyInstanceOfDynamicMetric(catalogedNamespace core.Namespace, requested
 			specifiedNamespace[index].Value = requestedNamespace[index].Value
 		}
 	}
-
 	return specifiedNamespace
 }
 
@@ -719,14 +688,11 @@ func validateMetricNamespace(ns core.Namespace) error {
 		if i.Name == "" && i.Value == "*" {
 			return errorMetricDynamicElementHasNoName(i.Value, ns.String())
 		}
-
 		value += i.Value
 	}
-
 	// plugin should NOT advertise metrics ending with a wildcard
 	if strings.HasSuffix(value, "*") {
 		return errorMetricEndsWithAsterisk(ns.String())
 	}
-
 	return nil
 }

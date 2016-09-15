@@ -271,7 +271,6 @@ func (p *subscriptionGroups) validatePluginSubscription(pl core.SubscribedPlugin
 
 func (s *subscriptionGroups) validateMetric(
 	metric core.Metric) (serrs []serror.SnapError) {
-
 	m, err := s.metricCatalog.GetMetric(metric.Namespace(), metric.Version())
 	if err != nil {
 		serrs = append(serrs, serror.New(err, map[string]interface{}{
