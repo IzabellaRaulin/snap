@@ -687,7 +687,7 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 				"_block": "control",
 				"action": "expanding-requested-metrics",
 				"query":  r.Namespace(),
-				"err": err,
+				"err":    err,
 			}).Error("error matching requested namespace with metric catalog")
 			serrs = append(serrs, serror.New(err))
 			continue
@@ -866,7 +866,6 @@ func (p *pluginControl) FetchMetrics(ns core.Namespace, version int) ([]core.Cat
 	return latest, nil
 }
 */
-
 
 func (p *pluginControl) GetMetric(ns core.Namespace, ver int) (core.CatalogedMetric, error) {
 	return p.metricCatalog.GetMetric(ns, ver)

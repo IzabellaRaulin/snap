@@ -149,7 +149,7 @@ func (mtt *mttNode) Fetch(ns []string) ([]*metricType, error) {
 		}
 	}
 	if len(mts) == 0 {
-		return nil, errorFetchMetricsNotFound("/" + strings.Join(ns, "/"))
+		return nil, errorMetricsNotFound("/" + strings.Join(ns, "/"))
 	}
 	return mts, nil
 }
@@ -171,7 +171,6 @@ func (mtt *mttNode) Remove(ns []string) error {
 	return nil
 }
 
-
 // GetMetric works like GetMetrics, but only returns the single MT in the requested version (or in the latest if ver < 1)
 // and does NOT gather the node's children.
 func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
@@ -181,7 +180,7 @@ func (mtt *mttNode) GetMetric(ns []string, ver int) (*metricType, error) {
 	}
 	// there is an expectation that only one metric should be fitted
 	if len(mts) > 1 {
-		return nil, fmt.Errorf("Incoming namespace `%s` is too ambiguous", "/"+strings.Join(ns, "/"), ver)
+		return nil, fmt.Errorf("Incoming namespace `%s` is too ambiguous (version: %d)", "/"+strings.Join(ns, "/"), ver)
 	}
 	return mts[0], nil
 }

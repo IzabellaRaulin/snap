@@ -22,6 +22,8 @@ limitations under the License.
 package control
 
 import (
+	//"fmt"
+	//"os"
 	"testing"
 	"time"
 
@@ -106,7 +108,7 @@ func TestTrie(t *testing.T) {
 		Convey("Fetch with error: not found", func() {
 			_, err := trie.Fetch([]string{"not", "present"})
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "Metrics not found below a given namespace: /not/present")
+			So(err.Error(), ShouldEqual, "No metric found below the given namespace: /not/present")
 		})
 		Convey("Fetch with error: depth exceeded", func() {
 			lp := new(loadedPlugin)
@@ -115,54 +117,373 @@ func TestTrie(t *testing.T) {
 			trie.Add(mt)
 			_, err := trie.Fetch([]string{"intel", "foo", "bar", "baz"})
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "Metrics not found below a given namespace: /intel/foo/bar/baz")
+			So(err.Error(), ShouldEqual, "No metric found below the given namespace: /intel/foo/bar/baz")
 
 		})
 	})
-	Convey("GetMetrics()", t, func() {
-		trie := NewMTTrie()
-		ver := -1
+}
 
-		Convey("simply get", func() {
+func TestTrie_GetMetrics(t *testing.T) {
+	Convey("Simply get - static metric", t, func() {
+		Convey("adding nodes to mttrie", func() {
+			trie := NewMTTrie()
 			lp2 := new(loadedPlugin)
 			lp2.Meta.Version = 2
 
 			lp5 := new(loadedPlugin)
 			lp5.Meta.Version = 5
-
-			mt2 := newMetricType(core.NewNamespace("intel", "foo"), time.Now(), lp2)
-			mt5 := newMetricType(core.NewNamespace("intel", "foo"), time.Now(), lp5)
+			mt2 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2)
+			mt5 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp5)
 
 			trie.Add(mt2)
 			trie.Add(mt5)
 
 			Convey("get the latest version", func() {
-				n, err := trie.GetMetrics([]string{"intel", "foo"}, -1)
+				mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, -1)
 				So(err, ShouldBeNil)
-				So(len(n), ShouldEqual, 1)
-				So(n[0], ShouldEqual, mt5)
+				So(len(mts), ShouldEqual, 1)
+				So(mts[0], ShouldEqual, mt5)
 			})
 			Convey("get the queried version", func() {
-				n, err := trie.GetMetrics([]string{"intel", "foo"}, 2)
+				mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, 2)
 				So(err, ShouldBeNil)
-				So(len(n), ShouldEqual, 1)
-				So(n[0], ShouldEqual, mt2)
+				So(len(mts), ShouldEqual, 1)
+				So(mts[0], ShouldEqual, mt2)
 			})
 			Convey("error: the queried version of metric cannot be found", func() {
-				n, err := trie.GetMetrics([]string{"intel", "foo"}, 6)
+				mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, 6)
 				So(err, ShouldNotBeNil)
-				So(n, ShouldBeEmpty)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/foo (version: 6)")
+				So(mts, ShouldBeEmpty)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/foo (version: 6)")
+			})
+			Convey("error: the queried metric cannot be found", func() {
+				mts, err := trie.GetMetrics([]string{"intel", "mock", "invalid"}, -1)
+				So(err, ShouldNotBeNil)
+				So(mts, ShouldBeEmpty)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/invalid (version: -1)")
 			})
 		})
-		Convey("error: no data at node", func() {
-			lp := new(loadedPlugin)
-			lp.Meta.Version = 1
-			mt := newMetricType(core.NewNamespace("intel", "foo"), time.Now(), lp)
-			trie.Add(mt)
-			n, err := trie.GetMetrics([]string{"intel"}, ver)
-			So(n, ShouldBeNil)
-			So(err.Error(), ShouldContainSubstring, "Metric not found:")
+
+	})
+
+	Convey("Simply get - dynamic metric", t, func() {
+		Convey("adding nodes to mttrie", func() {
+			trie := NewMTTrie()
+			lp2 := new(loadedPlugin)
+			lp2.Meta.Version = 2
+
+			lp5 := new(loadedPlugin)
+			lp5.Meta.Version = 5
+			mtstatic2 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2)
+			mtstatic5 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp5)
+
+			mtdynamic2 := newMetricType(core.NewNamespace("intel", "mock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lp2)
+			mtdynamic5 := newMetricType(core.NewNamespace("intel", "mock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lp5)
+
+			trie.Add(mtstatic2)
+			trie.Add(mtstatic5)
+			trie.Add(mtdynamic2)
+			trie.Add(mtdynamic5)
+
+			Convey("get the latest version", func() {
+				mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, -1)
+				So(err, ShouldBeNil)
+				So(len(mts), ShouldEqual, 1)
+				So(mts[0], ShouldEqual, mtdynamic5)
+			})
+			Convey("get the queried version", func() {
+				mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, 2)
+				So(err, ShouldBeNil)
+				So(len(mts), ShouldEqual, 1)
+				So(mts[0], ShouldEqual, mtdynamic2)
+			})
+			Convey("error: the queried version of metric cannot be found", func() {
+				mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, 6)
+				So(err, ShouldNotBeNil)
+				So(mts, ShouldBeEmpty)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/baz (version: 6)")
+			})
+			Convey("error: the queried metric cannot be found", func() {
+				mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "invalid"}, -1)
+				So(err, ShouldNotBeNil)
+				So(mts, ShouldBeEmpty)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/invalid (version: -1)")
+			})
+		})
+
+	})
+
+	Convey("Queried get - static and dynamic metrics", t, func() {
+		Convey("adding nodes to mttrie", func() {
+			trie := NewMTTrie()
+			lpMock2 := new(loadedPlugin)
+			lpMock2.Meta.Version = 2
+
+			lpMock5 := new(loadedPlugin)
+			lpMock5.Meta.Version = 5
+
+			lpAnothermock2 := new(loadedPlugin)
+			lpAnothermock2.Meta.Version = 2
+
+			lpAnothermock5 := new(loadedPlugin)
+			lpAnothermock5.Meta.Version = 5
+
+			// notice, that there are two version of each of mock metrics
+			mockMetrics := []*metricType{
+				newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lpMock2),
+				newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lpMock5),
+
+				newMetricType(core.NewNamespace("intel", "mock", "bar"), time.Now(), lpMock2),
+				newMetricType(core.NewNamespace("intel", "mock", "bar"), time.Now(), lpMock5),
+
+				newMetricType(core.NewNamespace("intel", "mock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lpMock2),
+				newMetricType(core.NewNamespace("intel", "mock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lpMock5),
+			}
+			//  notice, that there are two version of each of anothermock metrics
+			anothermockMetrics := []*metricType{
+				newMetricType(core.NewNamespace("intel", "anothermock", "foo"), time.Now(), lpAnothermock2),
+				newMetricType(core.NewNamespace("intel", "anothermock", "foo"), time.Now(), lpAnothermock5),
+
+				newMetricType(core.NewNamespace("intel", "anothermock", "bar"), time.Now(), lpAnothermock2),
+				newMetricType(core.NewNamespace("intel", "anothermock", "bar"), time.Now(), lpAnothermock5),
+
+				newMetricType(core.NewNamespace("intel", "anothermock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lpAnothermock2),
+				newMetricType(core.NewNamespace("intel", "anothermock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lpAnothermock5),
+			}
+
+			// adding mockMetrics and anothermockMetrics to mtrie
+			metrics := append(mockMetrics, anothermockMetrics...)
+			for _, m := range metrics {
+				trie.Add(m)
+			}
+
+			// numbers of metrics (they are represented in two version)
+			numOfMockMetrics := len(mockMetrics) / 2
+			numOfAnothermockMetrics := len(anothermockMetrics) / 2
+			numOfAllMetrics := numOfMockMetrics + numOfAnothermockMetrics
+
+			Convey("when the requested namespace is /intel/mock/*", func() {
+				Convey("get the latest version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "*"}, -1)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, numOfMockMetrics)
+					Convey("version should be the latest", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 5)
+						}
+					})
+				})
+				Convey("get the queried version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "*"}, 2)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, numOfMockMetrics)
+					Convey("version should be the queried version", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 2)
+						}
+					})
+				})
+			})
+			Convey("when the requested namespace is /intel/anothermock/*", func() {
+				Convey("get the latest version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "anothermock", "*"}, -1)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, numOfAnothermockMetrics)
+					Convey("version should be the latest", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 5)
+						}
+					})
+				})
+				Convey("get the queried version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "anothermock", "*"}, 2)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, numOfAnothermockMetrics)
+					Convey("version should be the queried version", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 2)
+						}
+					})
+				})
+			})
+			Convey("when the requested namespace is /intel/*", func() {
+				Convey("get the latest version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "*"}, -1)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, numOfAllMetrics)
+					Convey("version should be the latest", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 5)
+						}
+					})
+				})
+				Convey("get the queried version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "*"}, 2)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, numOfAllMetrics)
+					Convey("version should equals the queried version", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 2)
+						}
+					})
+				})
+			})
+			Convey("when the requested namespace is /intel/*/foo", func() {
+				Convey("get the latest version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "*", "foo"}, -1)
+					So(err, ShouldBeNil)
+					//expected two metrics: `/intel/mock/foo` and `/intel/anothermock/foo`
+					So(len(mts), ShouldEqual, 2)
+					Convey("version should be the latest", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 5)
+						}
+					})
+				})
+				Convey("get the queried version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "*", "foo"}, 2)
+					So(err, ShouldBeNil)
+					//expected two metrics: `/intel/mock/foo` and `/intel/anothermock/foo`
+					So(len(mts), ShouldEqual, 2)
+					Convey("version should be the queried version", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 2)
+						}
+					})
+				})
+			})
+			Convey("when the requested namespace is /intel/*/*/baz", func() {
+				Convey("get the latest version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "*", "*", "baz"}, -1)
+					So(err, ShouldBeNil)
+					//expected two metrics: `/intel/mock/*/baz` and `/intel/anothermock/*/baz`
+					So(len(mts), ShouldEqual, 2)
+					Convey("version should be the latest", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 5)
+						}
+					})
+				})
+				Convey("get the queried version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "*", "*", "baz"}, 2)
+					So(err, ShouldBeNil)
+					//expected two metrics: `/intel/mock/*/baz` and `/intel/anothermock/*/baz`
+					So(len(mts), ShouldEqual, 2)
+					Convey("version should be the queried version", func() {
+						for _, mt := range mts {
+							So(mt.Version(), ShouldEqual, 2)
+						}
+					})
+				})
+			})
+		})
+	})
+}
+
+func TestTrie_GetMetric(t *testing.T) {
+	Convey("Get static metric", t, func() {
+		Convey("adding nodes to mttrie", func() {
+			trie := NewMTTrie()
+			lp2 := new(loadedPlugin)
+			lp2.Meta.Version = 2
+
+			lp5 := new(loadedPlugin)
+			lp5.Meta.Version = 5
+			mt2 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2)
+			mt5 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp5)
+
+			trie.Add(mt2)
+			trie.Add(mt5)
+
+			Convey("get the latest version", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, -1)
+				So(err, ShouldBeNil)
+				So(mt, ShouldEqual, mt5)
+			})
+			Convey("get the queried version", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, 2)
+				So(err, ShouldBeNil)
+				So(mt, ShouldEqual, mt2)
+			})
+			Convey("error: the queried version of metric cannot be found", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, 6)
+				So(err, ShouldNotBeNil)
+				So(mt, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/foo (version: 6)")
+			})
+			Convey("error: the queried metric cannot be found", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "invalid"}, -1)
+				So(err, ShouldNotBeNil)
+				So(mt, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/invalid (version: -1)")
+			})
+		})
+
+	})
+	Convey("Get dynamic metric", t, func() {
+		Convey("adding nodes to mttrie", func() {
+			trie := NewMTTrie()
+			lp2 := new(loadedPlugin)
+			lp2.Meta.Version = 2
+
+			lp5 := new(loadedPlugin)
+			lp5.Meta.Version = 5
+			mtstatic2 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2)
+			mtstatic5 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp5)
+
+			mtdynamic2 := newMetricType(core.NewNamespace("intel", "mock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lp2)
+			mtdynamic5 := newMetricType(core.NewNamespace("intel", "mock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lp5)
+
+			trie.Add(mtstatic2)
+			trie.Add(mtstatic5)
+			trie.Add(mtdynamic2)
+			trie.Add(mtdynamic5)
+
+			Convey("get the latest version", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, -1)
+				So(err, ShouldBeNil)
+				So(mt, ShouldEqual, mtdynamic5)
+			})
+			Convey("get the queried version", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, 2)
+				So(err, ShouldBeNil)
+				So(mt, ShouldEqual, mtdynamic2)
+			})
+			Convey("error: the queried version of metric cannot be found", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, 6)
+				So(err, ShouldNotBeNil)
+				So(mt, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/baz (version: 6)")
+			})
+			Convey("error: the queried metric cannot be found", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "*", "invalid"}, -1)
+				So(err, ShouldNotBeNil)
+				So(mt, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/invalid (version: -1)")
+			})
+		})
+	})
+	Convey("Improper usage of GetMetric - requested namespace fulfills more than one metric's namespace", t, func() {
+		Convey("adding nodes to mttrie", func() {
+			trie := NewMTTrie()
+			lp2 := new(loadedPlugin)
+			lp2.Meta.Version = 2
+
+			mts := []*metricType{
+				newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2),
+				newMetricType(core.NewNamespace("intel", "mock", "baz"), time.Now(), lp2),
+			}
+
+			for _, m := range mts {
+				trie.Add(m)
+			}
+
+			Convey("when the requested namespace contains a query", func() {
+				mt, err := trie.GetMetric([]string{"intel", "mock", "*"}, -1)
+				So(err, ShouldNotBeNil)
+				So(mt, ShouldBeNil)
+				So(err.Error(), ShouldEqual, "Incoming namespace `/intel/mock/*` is too ambiguous (version: -1)")
+			})
 		})
 	})
 }

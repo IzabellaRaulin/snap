@@ -39,16 +39,16 @@ import (
 )
 
 const (
-	tuplePrefix = "("
-	tupleSuffix = ")"
+	tuplePrefix    = "("
+	tupleSuffix    = ")"
 	tupleSeparator = "|"
 )
 
 var (
-	errMetricNotFound   = errors.New("metric not found")
+	errMetricNotFound     = errors.New("metric not found")
 	errEmptyMetricCatalog = errors.New("metric catalog is empty, no plugin loaded")
-	errNegativeSubCount = serror.New(errors.New("subscription count cannot be < 0"))
-	hostnameReader hostnamer
+	errNegativeSubCount   = serror.New(errors.New("subscription count cannot be < 0"))
+	hostnameReader        hostnamer
 )
 
 // hostnameReader, hostnamer created for mocking
@@ -73,6 +73,17 @@ func errorMetricNotFound(ns string, ver ...int) error {
 	return fmt.Errorf("Metric not found: %s", ns)
 }
 
+func errorMetricsNotFound(ns string, ver ...int) error {
+	if ns == "/" {
+		// when fetching all cataloged metrics failed
+		return errEmptyMetricCatalog
+	}
+	if len(ver) > 0 {
+		return fmt.Errorf("No metric found below the given namespace: %s (version: %d)", ns, ver[0])
+	}
+	return fmt.Errorf("No metric found below the given namespace: %s", ns)
+}
+
 func errorMetricEndsWithAsterisk(ns string) error {
 	return fmt.Errorf("Metric namespace %s ends with an asterisk is not allowed", ns)
 }
@@ -83,14 +94,6 @@ func errorMetricStaticElementHasName(value, name, ns string) error {
 
 func errorMetricDynamicElementHasNoName(value, ns string) error {
 	return fmt.Errorf("A dynamic element %s requires a name for namespace %s.", value, ns)
-}
-
-func errorFetchMetricsNotFound(ns string) error {
-	if ns == "/" {
-		// when fetching all cataloged metrics failed
-		return errEmptyMetricCatalog
-	}
-	return fmt.Errorf("Metrics not found below a given namespace: %s", ns)
 }
 
 type metricCatalogItem struct {
@@ -153,7 +156,7 @@ type processesConfigData interface {
 
 func newMetricType(ns core.Namespace, last time.Time, plugin *loadedPlugin) *metricType {
 	return &metricType{
-		Plugin:             plugin,
+		Plugin: plugin,
 
 		namespace:          ns,
 		lastAdvertisedTime: last,
@@ -335,17 +338,17 @@ func (mc *metricCatalog) GetMetric(requested core.Namespace, version int) (*metr
 			ns = specifyInstanceOfDynamicMetric(ns, requested)
 		}
 	}
-		returnedmt := &metricType{
-				Plugin:             catalogedmt.Plugin,
-				namespace:          ns,
-				version:            catalogedmt.Version(),
-				lastAdvertisedTime: catalogedmt.LastAdvertisedTime(),
-				tags:               catalogedmt.Tags(),
-				policy:             catalogedmt.Plugin.ConfigPolicy.Get(catalogedmt.Namespace().Strings()),
-				config:             catalogedmt.Config(),
-				unit:               catalogedmt.Unit(),
-				description:        catalogedmt.Description(),
-		}
+	returnedmt := &metricType{
+		Plugin:             catalogedmt.Plugin,
+		namespace:          ns,
+		version:            catalogedmt.Version(),
+		lastAdvertisedTime: catalogedmt.LastAdvertisedTime(),
+		tags:               catalogedmt.Tags(),
+		policy:             catalogedmt.Plugin.ConfigPolicy.Get(catalogedmt.Namespace().Strings()),
+		config:             catalogedmt.Config(),
+		unit:               catalogedmt.Unit(),
+		description:        catalogedmt.Description(),
+	}
 	return returnedmt, nil
 }
 
@@ -397,7 +400,7 @@ func (mc *metricCatalog) GetMetrics(requested core.Namespace, version int) ([]*m
 		}
 	}
 	if len(returnedmts) == 0 {
-		return nil, fmt.Errorf("Metrics not found below a given namespace: %s (version: %d)", requested.String(), version)
+		return nil, errorMetricsNotFound(requested.String(), version)
 	}
 	return returnedmts, nil
 }
@@ -594,15 +597,15 @@ func addStandardAndWorkflowTags(m core.Metric, allTags map[string]map[string]str
 func containTuple(nsElement string) (bool, []string) {
 	tupleItems := []string{}
 	if strings.HasPrefix(nsElement, tuplePrefix) && strings.HasSuffix(nsElement, tupleSuffix) && strings.Contains(nsElement, tupleSeparator) {
-			if strings.ContainsAny(nsElement, "*") {
-				// an asterisk covers all tuples cases (eg. /intel/mock/(host0|host1|*)/baz)
-				// so to avoid retrieving the same metric more than once, return only '*' as a tuple's items
-				tupleItems= []string{"*"}
-			} else {
-				tuple := strings.TrimSuffix(strings.TrimPrefix(nsElement,"("), ")")
-				tuple = strings.Replace(tuple, "|", " ", -1)
-				tupleItems = strings.Fields(tuple)
-			}
+		if strings.ContainsAny(nsElement, "*") {
+			// an asterisk covers all tuples cases (eg. /intel/mock/(host0|host1|*)/baz)
+			// so to avoid retrieving the same metric more than once, return only '*' as a tuple's items
+			tupleItems = []string{"*"}
+		} else {
+			tuple := strings.TrimSuffix(strings.TrimPrefix(nsElement, "("), ")")
+			tuple = strings.Replace(tuple, "|", " ", -1)
+			tupleItems = strings.Fields(tuple)
+		}
 		return true, tupleItems
 	}
 	return false, nil
@@ -658,7 +661,6 @@ func findTuplesMatches(incomingNs core.Namespace) []core.Namespace {
 	}
 	return returnedNss
 }
-
 
 // specifyInstanceOfDynamicMetric returns specified namespace of incoming cataloged metric's namespace based on requested metric namespace
 func specifyInstanceOfDynamicMetric(catalogedNamespace core.Namespace, requestedNamespace core.Namespace) core.Namespace {
