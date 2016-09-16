@@ -7,7 +7,7 @@
     "workflow": {
         "collect": {
             "metrics": {
-                "/intel/mock/host1/baz": {}
+                "/intel/mock/host10/baz": {}
             },
             "config": {
                 "/intel/mock": {

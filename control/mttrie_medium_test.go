@@ -1,5 +1,4 @@
-// +build legacy
-
+// +build medium
 /*
 http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -124,7 +123,7 @@ func TestTrie(t *testing.T) {
 }
 
 func TestTrie_GetMetrics(t *testing.T) {
-	Convey("Simply get - static metric", t, func() {
+	Convey("Simply get metrics", t, func() {
 		Convey("adding nodes to mttrie", func() {
 			trie := NewMTTrie()
 			lp2 := new(loadedPlugin)
@@ -132,48 +131,7 @@ func TestTrie_GetMetrics(t *testing.T) {
 
 			lp5 := new(loadedPlugin)
 			lp5.Meta.Version = 5
-			mt2 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2)
-			mt5 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp5)
 
-			trie.Add(mt2)
-			trie.Add(mt5)
-
-			Convey("get the latest version", func() {
-				mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, -1)
-				So(err, ShouldBeNil)
-				So(len(mts), ShouldEqual, 1)
-				So(mts[0], ShouldEqual, mt5)
-			})
-			Convey("get the queried version", func() {
-				mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, 2)
-				So(err, ShouldBeNil)
-				So(len(mts), ShouldEqual, 1)
-				So(mts[0], ShouldEqual, mt2)
-			})
-			Convey("error: the queried version of metric cannot be found", func() {
-				mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, 6)
-				So(err, ShouldNotBeNil)
-				So(mts, ShouldBeEmpty)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/foo (version: 6)")
-			})
-			Convey("error: the queried metric cannot be found", func() {
-				mts, err := trie.GetMetrics([]string{"intel", "mock", "invalid"}, -1)
-				So(err, ShouldNotBeNil)
-				So(mts, ShouldBeEmpty)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/invalid (version: -1)")
-			})
-		})
-
-	})
-
-	Convey("Simply get - dynamic metric", t, func() {
-		Convey("adding nodes to mttrie", func() {
-			trie := NewMTTrie()
-			lp2 := new(loadedPlugin)
-			lp2.Meta.Version = 2
-
-			lp5 := new(loadedPlugin)
-			lp5.Meta.Version = 5
 			mtstatic2 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2)
 			mtstatic5 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp5)
 
@@ -185,35 +143,61 @@ func TestTrie_GetMetrics(t *testing.T) {
 			trie.Add(mtdynamic2)
 			trie.Add(mtdynamic5)
 
-			Convey("get the latest version", func() {
-				mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, -1)
-				So(err, ShouldBeNil)
-				So(len(mts), ShouldEqual, 1)
-				So(mts[0], ShouldEqual, mtdynamic5)
+			Convey("for requested static metric", func() {
+				Convey("get the latest version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, -1)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, 1)
+					So(mts[0], ShouldEqual, mtstatic5)
+				})
+				Convey("get the queried version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, 2)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, 1)
+					So(mts[0], ShouldEqual, mtstatic2)
+				})
+				Convey("error: the queried version of metric cannot be found", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "foo"}, 6)
+					So(err, ShouldNotBeNil)
+					So(mts, ShouldBeEmpty)
+					So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/foo (version: 6)")
+				})
+				Convey("error: the queried metric cannot be found", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "invalid"}, -1)
+					So(err, ShouldNotBeNil)
+					So(mts, ShouldBeEmpty)
+					So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/invalid (version: -1)")
+				})
 			})
-			Convey("get the queried version", func() {
-				mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, 2)
-				So(err, ShouldBeNil)
-				So(len(mts), ShouldEqual, 1)
-				So(mts[0], ShouldEqual, mtdynamic2)
-			})
-			Convey("error: the queried version of metric cannot be found", func() {
-				mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, 6)
-				So(err, ShouldNotBeNil)
-				So(mts, ShouldBeEmpty)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/baz (version: 6)")
-			})
-			Convey("error: the queried metric cannot be found", func() {
-				mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "invalid"}, -1)
-				So(err, ShouldNotBeNil)
-				So(mts, ShouldBeEmpty)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/invalid (version: -1)")
+			Convey("for requested dynamic metric", func() {
+				Convey("get the latest version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, -1)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, 1)
+					So(mts[0], ShouldEqual, mtdynamic5)
+				})
+				Convey("get the queried version", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, 2)
+					So(err, ShouldBeNil)
+					So(len(mts), ShouldEqual, 1)
+					So(mts[0], ShouldEqual, mtdynamic2)
+				})
+				Convey("error: the queried version of metric cannot be found", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "baz"}, 6)
+					So(err, ShouldNotBeNil)
+					So(mts, ShouldBeEmpty)
+					So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/baz (version: 6)")
+				})
+				Convey("error: the queried metric cannot be found", func() {
+					mts, err := trie.GetMetrics([]string{"intel", "mock", "*", "invalid"}, -1)
+					So(err, ShouldNotBeNil)
+					So(mts, ShouldBeEmpty)
+					So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/invalid (version: -1)")
+				})
 			})
 		})
-
 	})
-
-	Convey("Queried get - static and dynamic metrics", t, func() {
+	Convey("Query in get metrics", t, func() {
 		Convey("adding nodes to mttrie", func() {
 			trie := NewMTTrie()
 			lpMock2 := new(loadedPlugin)
@@ -381,46 +365,7 @@ func TestTrie_GetMetrics(t *testing.T) {
 }
 
 func TestTrie_GetMetric(t *testing.T) {
-	Convey("Get static metric", t, func() {
-		Convey("adding nodes to mttrie", func() {
-			trie := NewMTTrie()
-			lp2 := new(loadedPlugin)
-			lp2.Meta.Version = 2
-
-			lp5 := new(loadedPlugin)
-			lp5.Meta.Version = 5
-			mt2 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2)
-			mt5 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp5)
-
-			trie.Add(mt2)
-			trie.Add(mt5)
-
-			Convey("get the latest version", func() {
-				mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, -1)
-				So(err, ShouldBeNil)
-				So(mt, ShouldEqual, mt5)
-			})
-			Convey("get the queried version", func() {
-				mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, 2)
-				So(err, ShouldBeNil)
-				So(mt, ShouldEqual, mt2)
-			})
-			Convey("error: the queried version of metric cannot be found", func() {
-				mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, 6)
-				So(err, ShouldNotBeNil)
-				So(mt, ShouldBeNil)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/foo (version: 6)")
-			})
-			Convey("error: the queried metric cannot be found", func() {
-				mt, err := trie.GetMetric([]string{"intel", "mock", "invalid"}, -1)
-				So(err, ShouldNotBeNil)
-				So(mt, ShouldBeNil)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/invalid (version: -1)")
-			})
-		})
-
-	})
-	Convey("Get dynamic metric", t, func() {
+	Convey("Simply get metric", t, func() {
 		Convey("adding nodes to mttrie", func() {
 			trie := NewMTTrie()
 			lp2 := new(loadedPlugin)
@@ -439,31 +384,58 @@ func TestTrie_GetMetric(t *testing.T) {
 			trie.Add(mtdynamic2)
 			trie.Add(mtdynamic5)
 
-			Convey("get the latest version", func() {
-				mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, -1)
-				So(err, ShouldBeNil)
-				So(mt, ShouldEqual, mtdynamic5)
+			Convey("for requested static metric", func() {
+				Convey("get the latest version", func() {
+					mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, -1)
+					So(err, ShouldBeNil)
+					So(mt, ShouldEqual, mtstatic5)
+				})
+				Convey("get the queried version", func() {
+					mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, 2)
+					So(err, ShouldBeNil)
+					So(mt, ShouldEqual, mtstatic2)
+				})
+				Convey("error: the queried version of metric cannot be found", func() {
+					mt, err := trie.GetMetric([]string{"intel", "mock", "foo"}, 6)
+					So(err, ShouldNotBeNil)
+					So(mt, ShouldBeNil)
+					So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/foo (version: 6)")
+				})
+				Convey("error: the queried metric cannot be found", func() {
+					mt, err := trie.GetMetric([]string{"intel", "mock", "invalid"}, -1)
+					So(err, ShouldNotBeNil)
+					So(mt, ShouldBeNil)
+					So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/invalid (version: -1)")
+				})
 			})
-			Convey("get the queried version", func() {
-				mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, 2)
-				So(err, ShouldBeNil)
-				So(mt, ShouldEqual, mtdynamic2)
-			})
-			Convey("error: the queried version of metric cannot be found", func() {
-				mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, 6)
-				So(err, ShouldNotBeNil)
-				So(mt, ShouldBeNil)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/baz (version: 6)")
-			})
-			Convey("error: the queried metric cannot be found", func() {
-				mt, err := trie.GetMetric([]string{"intel", "mock", "*", "invalid"}, -1)
-				So(err, ShouldNotBeNil)
-				So(mt, ShouldBeNil)
-				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/invalid (version: -1)")
+
+			Convey("for requested dynamic metric", func() {
+				Convey("get the latest version", func() {
+					mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, -1)
+					So(err, ShouldBeNil)
+					So(mt, ShouldEqual, mtdynamic5)
+				})
+				Convey("get the queried version", func() {
+					mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, 2)
+					So(err, ShouldBeNil)
+					So(mt, ShouldEqual, mtdynamic2)
+				})
+				Convey("error: the queried version of metric cannot be found", func() {
+					mt, err := trie.GetMetric([]string{"intel", "mock", "*", "baz"}, 6)
+					So(err, ShouldNotBeNil)
+					So(mt, ShouldBeNil)
+					So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/baz (version: 6)")
+				})
+				Convey("error: the queried metric cannot be found", func() {
+					mt, err := trie.GetMetric([]string{"intel", "mock", "*", "invalid"}, -1)
+					So(err, ShouldNotBeNil)
+					So(mt, ShouldBeNil)
+					So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/invalid (version: -1)")
+				})
 			})
 		})
 	})
-	Convey("Improper usage of GetMetric - requested namespace fulfills more than one metric's namespace", t, func() {
+	Convey("improper usage of GetMetric - requested namespace fulfills more than one metric's namespace", t, func() {
 		Convey("adding nodes to mttrie", func() {
 			trie := NewMTTrie()
 			lp2 := new(loadedPlugin)
@@ -478,11 +450,82 @@ func TestTrie_GetMetric(t *testing.T) {
 				trie.Add(m)
 			}
 
-			Convey("when the requested namespace contains a query", func() {
+			Convey("error: the requested namespace contains a query", func() {
 				mt, err := trie.GetMetric([]string{"intel", "mock", "*"}, -1)
 				So(err, ShouldNotBeNil)
 				So(mt, ShouldBeNil)
 				So(err.Error(), ShouldEqual, "Incoming namespace `/intel/mock/*` is too ambiguous (version: -1)")
+			})
+		})
+	})
+}
+
+func TestTrie_GetVersions(t *testing.T) {
+	Convey("Adding nodes to mttrie", t, func() {
+		trie := NewMTTrie()
+		lp2 := new(loadedPlugin)
+		lp2.Meta.Version = 2
+
+		lp5 := new(loadedPlugin)
+		lp5.Meta.Version = 5
+
+		mtstatic2 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp2)
+		mtstatic5 := newMetricType(core.NewNamespace("intel", "mock", "foo"), time.Now(), lp5)
+
+		mtdynamic2 := newMetricType(core.NewNamespace("intel", "mock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lp2)
+		mtdynamic5 := newMetricType(core.NewNamespace("intel", "mock").AddDynamicElement("host", "host id").AddStaticElement("baz"), time.Now(), lp5)
+
+		trie.Add(mtstatic2)
+		trie.Add(mtstatic5)
+
+		trie.Add(mtdynamic2)
+		trie.Add(mtdynamic5)
+
+		Convey("for requested static metric", func() {
+			Convey("get all available versions", func() {
+				mts, err := trie.GetVersions([]string{"intel", "mock", "foo"})
+				So(err, ShouldBeNil)
+				So(len(mts), ShouldEqual, 2)
+				So(mts, ShouldContain, mtstatic2)
+				So(mts, ShouldContain, mtstatic5)
+			})
+			Convey("error: the queried metric cannot be found", func() {
+				mts, err := trie.GetVersions([]string{"intel", "mock", "invalid"})
+				So(err, ShouldNotBeNil)
+				So(mts, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/invalid")
+			})
+		})
+		Convey("for requested dynamic metric", func() {
+			Convey("get all available versions", func() {
+				mts, err := trie.GetVersions([]string{"intel", "mock", "*", "baz"})
+				So(err, ShouldBeNil)
+				So(len(mts), ShouldEqual, 2)
+				So(mts, ShouldContain, mtdynamic2)
+				So(mts, ShouldContain, mtdynamic5)
+			})
+			Convey("error: the queried metric cannot be found", func() {
+				mts, err := trie.GetVersions([]string{"intel", "mock", "*", "invalid"})
+				So(err, ShouldNotBeNil)
+				So(mts, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/*/invalid")
+			})
+		})
+		Convey("for requested query", func() {
+			Convey("get all available versions", func() {
+				mts, err := trie.GetVersions([]string{"intel", "*"})
+				So(err, ShouldBeNil)
+				So(len(mts), ShouldEqual, 4)
+				So(mts, ShouldContain, mtstatic2)
+				So(mts, ShouldContain, mtstatic5)
+				So(mts, ShouldContain, mtdynamic2)
+				So(mts, ShouldContain, mtdynamic5)
+			})
+			Convey("error: the queried metric cannot be found", func() {
+				mts, err := trie.GetVersions([]string{"invalid", "*"})
+				So(err, ShouldNotBeNil)
+				So(mts, ShouldBeNil)
+				So(err.Error(), ShouldContainSubstring, "Metric not found: /invalid/*")
 			})
 		})
 	})

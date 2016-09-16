@@ -1008,30 +1008,17 @@ func (p *pluginControl) PublishMetrics(metrics []core.Metric, config map[string]
 		return []error{ErrControllerNotStarted}
 	}
 
-	////todo debug iza
-	//fmt.Fprintf(os.Stderr, "Debug, Iza !1.!PublishMetrics!! config has %d items\n", len(config))
-	//
-	//for key, val := range config{
-	//	fmt.Fprintf(os.Stderr, "Debug, Iza 1.!!PublishMetrics!! publish.config[%s]=%v\n", key, val)
-	//}
-
 	// merge global plugin config into the config for this request
 	// without over-writing the task specific config
-	//cfg := p.Config.Plugins.getPluginConfigDataNode(core.PublisherPluginType, pluginName, pluginVersion).Table()
+	cfg := p.Config.Plugins.getPluginConfigDataNode(core.PublisherPluginType, pluginName, pluginVersion).Table()
 
-	//fmt.Fprintf(os.Stderr, "Debug, Iza 2.!!PublishMetrics!! global config has %d items\n", len(cfg))
-	//
-	//for key, val := range cfg{
-	//	fmt.Fprintf(os.Stderr, "Debug, Iza !!PublishMetrics!! global config[%s]=%v\n", key, val)
-	//}
-
-	//merged := make(map[string]ctypes.ConfigValue)
-	//for k, v := range cfg {
-	//	merged[k] = v
-	//}
-	//for k, v := range config {
-	//	merged[k] = v
-	//}
+	merged := make(map[string]ctypes.ConfigValue)
+	for k, v := range cfg {
+		merged[k] = v
+	}
+	for k, v := range config {
+		merged[k] = v
+	}
 
 	return p.pluginRunner.AvailablePlugins().publishMetrics(metrics, pluginName, pluginVersion, config, taskID)
 }
@@ -1045,14 +1032,14 @@ func (p *pluginControl) ProcessMetrics(metrics []core.Metric, config map[string]
 	}
 	// merge global plugin config into the config for this request
 	// without over-writing the task specific config
-	//cfg := p.Config.Plugins.getPluginConfigDataNode(core.ProcessorPluginType, pluginName, pluginVersion).Table()
-	//merged := make(map[string]ctypes.ConfigValue)
-	//for k, v := range cfg {
-	//	merged[k] = v
-	//}
-	//for k, v := range config {
-	//	merged[k] = v
-	//}
+	cfg := p.Config.Plugins.getPluginConfigDataNode(core.ProcessorPluginType, pluginName, pluginVersion).Table()
+	merged := make(map[string]ctypes.ConfigValue)
+	for k, v := range cfg {
+		merged[k] = v
+	}
+	for k, v := range config {
+		merged[k] = v
+	}
 
 	return p.pluginRunner.AvailablePlugins().processMetrics(metrics, pluginName, pluginVersion, config, taskID)
 }

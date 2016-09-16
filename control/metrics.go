@@ -365,16 +365,13 @@ func (mc *metricCatalog) GetMetrics(requested core.Namespace, version int) ([]*m
 	for _, rns := range requestedNss {
 		catalogedmts, err := mc.tree.GetMetrics(rns.Strings(), version)
 		if err != nil {
-			// tuple e.q. `(a|b)` works like logic OR
-			// return error only if neither 'a' nor 'b' cannot be found in the metric catalog
-			// here only log error and check the next tuple
 			log.WithFields(log.Fields{
 				"_module": "control",
 				"_file":   "metrics.go,",
 				"_block":  "get-metrics",
 				"error":   err,
 			}).Error("error getting metric")
-			continue
+			return nil, err
 		}
 		for _, catalogedmt := range catalogedmts {
 			ns := catalogedmt.Namespace()
