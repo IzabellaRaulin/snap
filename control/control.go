@@ -137,8 +137,6 @@ type catalogsMetrics interface {
 	RmUnloadedPluginMetrics(lp *loadedPlugin)
 	GetVersions(core.Namespace) ([]*metricType, error)
 	Fetch(core.Namespace) ([]*metricType, error)
-	Item() (string, []*metricType)
-	Next() bool
 	Keys() []string
 	Subscribe([]string, int) error
 	Unsubscribe([]string, int) error
@@ -739,7 +737,7 @@ func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric
 	}
 	if controlLogger.Level >= log.DebugLevel {
 		for _, pmt := range newMetricsGroupedByPlugin {
-			for _, m := range pmt.metricTypes {
+			for _, m := range pmt.Metrics() {
 				log.WithFields(log.Fields{
 					"_block": "control",
 					"action": "gather",
@@ -1019,7 +1017,6 @@ func (p *pluginControl) PublishMetrics(metrics []core.Metric, config map[string]
 	for k, v := range config {
 		merged[k] = v
 	}
-
 	return p.pluginRunner.AvailablePlugins().publishMetrics(metrics, pluginName, pluginVersion, config, taskID)
 }
 
@@ -1086,10 +1083,15 @@ type metricTypes struct {
 	metricTypes []core.Metric
 }
 
-func (mts *metricTypes) Count() int {
+func (mts metricTypes) Count() int {
 	return len(mts.metricTypes)
 }
-
+func (mts metricTypes) Metrics() []core.Metric {
+	return mts.metricTypes
+}
+func (mts metricTypes) Plugin() *loadedPlugin {
+	return mts.plugin
+}
 func containsPlugin(slice []core.SubscribedPlugin, lookup subscribedPlugin) bool {
 	for _, plugin := range slice {
 		if plugin.Name() == lookup.Name() &&

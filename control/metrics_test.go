@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/snap/control/plugin"
+	"github.com/intelsdi-x/snap/control/plugin/cpolicy"
 	"github.com/intelsdi-x/snap/core"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -266,195 +267,177 @@ func TestMetricType(t *testing.T) {
 //	})
 //}
 
-//func TestMetricCatalog(t *testing.T) {
-//	Convey("newMetricCatalog()", t, func() {
-//		Convey("returns a metricCatalog", func() {
-//			mc := newMetricCatalog()
-//			So(mc, ShouldHaveSameTypeAs, new(metricCatalog))
-//		})
-//	})
-//	Convey("metricCatalog.Add()", t, func() {
-//		Convey("adds a metricType to the metricCatalog", func() {
-//			ns := core.NewNamespace("test")
-//			mt := newMetricType(ns, time.Now(), new(loadedPlugin))
-//			mt.description = "some description"
-//			mc := newMetricCatalog()
-//			mc.Add(mt)
-//			_mt, err := mc.GetMetric(ns, -1)
-//			So(_mt, ShouldResemble, mt)
-//			So(err, ShouldBeNil)
-//		})
-//	})
-//	Convey("metricCatalog.GetMetric()", t, func() {
-//		mc := newMetricCatalog()
-//		ts := time.Now()
-//		Convey("add multiple metricTypes and get them back", func() {
-//			ns := []core.Namespace{
-//				core.NewNamespace("test1"),
-//				core.NewNamespace("test2"),
-//				core.NewNamespace("test3"),
-//			}
-//			lp := new(loadedPlugin)
-//			mt := []*metricType{
-//				newMetricType(ns[0], ts, lp),
-//				newMetricType(ns[1], ts, lp),
-//				newMetricType(ns[2], ts, lp),
-//			}
-//			for _, v := range mt {
-//				mc.Add(v)
-//			}
-//			for k, v := range ns {
-//				_mt, err := mc.GetMetric(v, -1)
-//				So(_mt, ShouldEqual, mt[k])
-//				So(err, ShouldBeNil)
-//			}
-//		})
-//		Convey("it returns the latest version", func() {
-//			lp2 := new(loadedPlugin)
-//			lp2.Meta.Version = 2
-//			lp35 := new(loadedPlugin)
-//			lp35.Meta.Version = 35
-//			m2 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp2)
-//			mc.Add(m2)
-//			m35 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp35)
-//			mc.Add(m35)
-//			m, err := mc.GetMetric(core.NewNamespace("foo", "bar"), -1)
-//			So(err, ShouldBeNil)
-//			So(m, ShouldEqual, m35)
-//		})
-//		Convey("it returns the queried version", func() {
-//			lp2 := new(loadedPlugin)
-//			lp2.Meta.Version = 2
-//			lp35 := new(loadedPlugin)
-//			lp35.Meta.Version = 35
-//			m2 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp2)
-//			mc.Add(m2)
-//			m35 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp35)
-//			mc.Add(m35)
-//			m, err := mc.GetMetric(core.NewNamespace("foo", "bar"), 2)
-//			So(err, ShouldBeNil)
-//			So(m, ShouldEqual, m2)
-//		})
-//		Convey("it returns metric not found if version doesn't exist", func() {
-//			lp2 := new(loadedPlugin)
-//			lp2.Meta.Version = 2
-//			lp35 := new(loadedPlugin)
-//			lp35.Meta.Version = 35
-//			m2 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp2)
-//			mc.Add(m2)
-//			m35 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp35)
-//			mc.Add(m35)
-//			_, err := mc.GetMetric(core.NewNamespace("foo", "bar"), 7)
-//			So(err.Error(), ShouldContainSubstring, "Metric not found:")
-//		})
-//	})
-//	Convey("metricCatalog.Next()", t, func() {
-//		ns := core.NewNamespace("test")
-//		mt := newMetricType(ns, time.Now(), new(loadedPlugin))
-//		mc := newMetricCatalog()
-//		Convey("returns false on empty table", func() {
-//			ok := mc.Next()
-//			So(ok, ShouldEqual, false)
-//		})
-//		Convey("returns true on populated table", func() {
-//			mc.Add(mt)
-//			ok := mc.Next()
-//			So(ok, ShouldEqual, true)
-//		})
-//	})
-//	Convey("metricCatalog.Item()", t, func() {
-//		ns := []core.Namespace{
-//			core.NewNamespace("test1"),
-//			core.NewNamespace("test2"),
-//			core.NewNamespace("test3"),
-//		}
-//		lp := new(loadedPlugin)
-//		t := time.Now()
-//		mt := []*metricType{
-//			newMetricType(ns[0], t, lp),
-//			newMetricType(ns[1], t, lp),
-//			newMetricType(ns[2], t, lp),
-//		}
-//		mc := newMetricCatalog()
-//		for _, v := range mt {
-//			mc.Add(v)
-//		}
-//		Convey("return first key and item in table", func() {
-//			mc.Next()
-//			key, item := mc.Item()
-//			So(key, ShouldEqual, ns[0].String())
-//			So(item, ShouldResemble, []*metricType{mt[0]})
-//		})
-//		Convey("return second key and item in table", func() {
-//			mc.Next()
-//			mc.Next()
-//			key, item := mc.Item()
-//			So(key, ShouldEqual, ns[1].String())
-//			So(item, ShouldResemble, []*metricType{mt[1]})
-//		})
-//		Convey("return third key and item in table", func() {
-//			mc.Next()
-//			mc.Next()
-//			mc.Next()
-//			key, item := mc.Item()
-//			So(key, ShouldEqual, ns[2].String())
-//			So(item, ShouldResemble, []*metricType{mt[2]})
-//		})
-//	})
-//
-//	Convey("metricCatalog.Remove()", t, func() {
-//		mc := newMetricCatalog()
-//		ts := time.Now()
-//		nss := []core.Namespace{
-//			core.NewNamespace("mock", "test", "1"),
-//			core.NewNamespace("mock", "test", "2"),
-//			core.NewNamespace("mock", "test", "3"),
-//			core.NewNamespace("mock", "cgroups", "*", "in"),
-//			core.NewNamespace("mock", "cgroups", "*", "out"),
-//		}
-//		Convey("removes a metricType from the catalog", func() {
-//			// adding metrics to the catalog
-//			mt := []*metricType{}
-//			for i, ns := range nss {
-//				mt = append(mt, newMetricType(ns, ts, new(loadedPlugin)))
-//				mc.Add(mt[i])
-//			}
-//			Convey("validate adding metrics to the catalog", func() {
-//				for _, ns := range nss {
-//					// check if metric is in metric catalog
-//					_mt, err := mc.GetMetric(ns, -1)
-//					So(_mt, ShouldNotBeEmpty)
-//					So(err, ShouldBeNil)
-//				}
-//			})
-//
-//			// remove a single metric from the catalog
-//			mc.Remove(nss[0])
-//
-//			Convey("validate removing a single metric from the catalog", func() {
-//				_mt, err := mc.GetMetric(core.NewNamespace("mock", "test", "1"), -1)
-//				So(_mt, ShouldBeNil)
-//				So(err, ShouldNotBeNil)
-//
-//			})
-//
-//			// remove the rest metrics from the catalog
-//			for _, ns := range nss[1:] {
-//				mc.Remove(ns)
-//			}
-//
-//			Convey("validate removing all metrics from the catalog", func() {
-//				for _, ns := range nss {
-//					// check if metric is in metric catalog
-//					_mt, err := mc.GetMetric(ns, -1)
-//					So(_mt, ShouldBeNil)
-//					So(err, ShouldNotBeNil)
-//					So(err.Error(), ShouldContainSubstring, "Metric not found:")
-//				}
-//			})
-//		})
-//	})
-//}
+func TestMetricCatalog(t *testing.T) {
+	Convey("newMetricCatalog()", t, func() {
+		Convey("returns a metricCatalog", func() {
+			mc := newMetricCatalog()
+			So(mc, ShouldHaveSameTypeAs, new(metricCatalog))
+		})
+	})
+	Convey("metricCatalog.Add()", t, func() {
+		Convey("adds a metricType to the metricCatalog", func() {
+			ns := core.NewNamespace("test")
+			lp := new(loadedPlugin)
+			lp.ConfigPolicy = cpolicy.New()
+
+			mt := newMetricType(ns, time.Now(), lp)
+			mt.description = "some description"
+			mc := newMetricCatalog()
+			mc.Add(mt)
+
+			_mt, err := mc.GetMetric(ns, -1)
+			So(err, ShouldBeNil)
+			So(_mt.Namespace(), ShouldResemble, mt.Namespace())
+		})
+	})
+	Convey("metricCatalog.GetMetric()", t, func() {
+		mc := newMetricCatalog()
+		ts := time.Now()
+		Convey("add multiple metricTypes and get them back", func() {
+			ns := []core.Namespace{
+				core.NewNamespace("test1"),
+				core.NewNamespace("test2"),
+				core.NewNamespace("test3"),
+			}
+			lp := new(loadedPlugin)
+			lp.ConfigPolicy = cpolicy.New()
+			mt := []*metricType{
+				newMetricType(ns[0], ts, lp),
+				newMetricType(ns[1], ts, lp),
+				newMetricType(ns[2], ts, lp),
+			}
+			for _, v := range mt {
+				mc.Add(v)
+			}
+			for k, v := range ns {
+				_mt, err := mc.GetMetric(v, -1)
+				So(err, ShouldBeNil)
+				So(_mt.Namespace().String(), ShouldEqual, mt[k].Namespace().String())
+			}
+		})
+		Convey("it returns the latest version", func() {
+			lp2 := new(loadedPlugin)
+			lp2.ConfigPolicy = cpolicy.New()
+			lp2.Meta.Version = 2
+			lp35 := new(loadedPlugin)
+			lp35.ConfigPolicy = cpolicy.New()
+			lp35.Meta.Version = 35
+			m2 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp2)
+			mc.Add(m2)
+			m35 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp35)
+			mc.Add(m35)
+			m, err := mc.GetMetric(core.NewNamespace("foo", "bar"), -1)
+			So(err, ShouldBeNil)
+			So(m.Namespace().String(), ShouldEqual, m35.Namespace().String())
+			So(m.Version(), ShouldEqual, lp35.Version())
+		})
+		Convey("it returns the queried version", func() {
+			lp2 := new(loadedPlugin)
+			lp2.ConfigPolicy = cpolicy.New()
+			lp2.Meta.Version = 2
+			lp35 := new(loadedPlugin)
+			lp35.ConfigPolicy = cpolicy.New()
+			lp35.Meta.Version = 35
+			m2 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp2)
+			mc.Add(m2)
+			m35 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp35)
+			mc.Add(m35)
+			m, err := mc.GetMetric(core.NewNamespace("foo", "bar"), 2)
+			So(err, ShouldBeNil)
+			So(m.Namespace().String(), ShouldEqual, m2.Namespace().String())
+			So(m.Version(), ShouldEqual, lp2.Version())
+		})
+		Convey("it returns metric not found if version doesn't exist", func() {
+			lp2 := new(loadedPlugin)
+			lp2.ConfigPolicy = cpolicy.New()
+			lp2.Meta.Version = 2
+			lp35 := new(loadedPlugin)
+			lp35.ConfigPolicy = cpolicy.New()
+			lp35.Meta.Version = 35
+			m2 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp2)
+			mc.Add(m2)
+			m35 := newMetricType(core.NewNamespace("foo", "bar"), ts, lp35)
+			mc.Add(m35)
+			_, err := mc.GetMetric(core.NewNamespace("foo", "bar"), 7)
+			So(err.Error(), ShouldContainSubstring, "Metric not found:")
+		})
+	})
+	Convey("metricCatalog.Remove()", t, func() {
+		mc := newMetricCatalog()
+		ts := time.Now()
+		lp := new(loadedPlugin)
+		lp.ConfigPolicy = cpolicy.New()
+		nss := []core.Namespace{
+			core.NewNamespace("mock", "test", "1"),
+			core.NewNamespace("mock", "test", "2"),
+			core.NewNamespace("mock", "test", "3"),
+			core.NewNamespace("mock", "cgroups", "*", "in"),
+			core.NewNamespace("mock", "cgroups", "*", "out"),
+		}
+		Convey("removes a metricType from the catalog", func() {
+			// adding metrics to the catalog
+			mt := []*metricType{}
+			for i, ns := range nss {
+				mt = append(mt, newMetricType(ns, ts, lp))
+				mc.Add(mt[i])
+			}
+			Convey("validate adding metrics to the catalog", func() {
+				for _, ns := range nss {
+					// check if metric is in metric catalog
+					_mt, err := mc.GetMetric(ns, -1)
+					So(_mt, ShouldNotBeEmpty)
+					So(err, ShouldBeNil)
+				}
+			})
+
+			// remove a single metric from the catalog
+			mc.Remove(nss[0])
+
+			Convey("validate removing a single metric from the catalog", func() {
+				_mt, err := mc.GetMetric(core.NewNamespace("mock", "test", "1"), -1)
+				So(_mt, ShouldBeNil)
+				So(err, ShouldNotBeNil)
+
+			})
+
+			// remove the rest metrics from the catalog
+			for _, ns := range nss[1:] {
+				mc.Remove(ns)
+			}
+
+			Convey("validate removing all metrics from the catalog", func() {
+				for _, ns := range nss {
+					// check if metric is in metric catalog
+					_mt, err := mc.GetMetric(ns, -1)
+					So(_mt, ShouldBeNil)
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldContainSubstring, "Metric not found:")
+				}
+			})
+		})
+	})
+}
+
+//todo iza - more coverage
+func TestResolvePlugin(t *testing.T) {
+	Convey("GetPlugin()", t, func() {
+		mc := newMetricCatalog()
+		lp := &loadedPlugin{}
+		lp.ConfigPolicy = cpolicy.New()
+		mt := newMetricType(core.NewNamespace("foo", "bar"), time.Now(), lp)
+		mc.Add(mt)
+		Convey("it resolves the plugin", func() {
+			p, err := mc.GetPlugin(core.NewNamespace("foo", "bar"), -1)
+			So(err, ShouldBeNil)
+			So(p, ShouldEqual, lp)
+		})
+		Convey("it returns an error if the metricType cannot be found", func() {
+			p, err := mc.GetPlugin(core.NewNamespace("baz", "qux"), -1)
+			So(p, ShouldBeNil)
+			So(err.Error(), ShouldResemble, "Metric not found: /baz/qux (version: -1)")
+		})
+	})
+}
 
 func TestSubscribe(t *testing.T) {
 	ns := []core.Namespace{
@@ -463,6 +446,9 @@ func TestSubscribe(t *testing.T) {
 		core.NewNamespace("test3"),
 	}
 	lp := new(loadedPlugin)
+	lp.ConfigPolicy = cpolicy.New()
+	lp.Meta.Version = 1
+	lp.Meta.Name = "mock"
 	ts := time.Now()
 	mt := []*metricType{
 		newMetricType(ns[0], ts, lp),
@@ -483,12 +469,9 @@ func TestSubscribe(t *testing.T) {
 		Convey("then it gets correctly increments the count", func() {
 			err := mc.Subscribe([]string{"test1"}, -1)
 			So(err, ShouldBeNil)
-			//todo iza
-			//fmt.Fprint(os.Stderr, " Debug, iza - test 488")
-			//m, err2 := mc.GetMetric(core.NewNamespace("test1"), -1)
-			//fmt.Fprint(os.Stderr, " Debug, iza - test 490")
-			//So(err2, ShouldBeNil)
-			//So(m.subscriptions, ShouldEqual, 1)
+			m, err2 := mc.GetMetric(core.NewNamespace("test1"), -1)
+			So(err2, ShouldBeNil)
+			So(m.SubscriptionCount(), ShouldEqual, 1)
 		})
 	})
 }
@@ -500,6 +483,7 @@ func TestUnsubscribe(t *testing.T) {
 		core.NewNamespace("test3"),
 	}
 	lp := new(loadedPlugin)
+	lp.ConfigPolicy = cpolicy.New()
 	ts := time.Now()
 	mt := []*metricType{
 		newMetricType(ns[0], ts, lp),
@@ -514,25 +498,25 @@ func TestUnsubscribe(t *testing.T) {
 		Convey("then its subscription count is decremented", func() {
 			err := mc.Subscribe([]string{"test1"}, -1)
 			So(err, ShouldBeNil)
-			//err1 := mc.Unsubscribe([]string{"test1"}, -1)
-			//So(err1, ShouldBeNil)
-			//m, err2 := mc.GetMetric(core.NewNamespace("test1"), -1)
-			//So(err2, ShouldBeNil)
-			//So(m.subscriptions, ShouldEqual, 0)
+			err1 := mc.Unsubscribe([]string{"test1"}, -1)
+			So(err1, ShouldBeNil)
+			m, err2 := mc.GetMetric(core.NewNamespace("test1"), -1)
+			So(err2, ShouldBeNil)
+			So(m.subscriptions, ShouldEqual, 0)
 		})
 	})
-	//Convey("when the metric is not in the table", t, func() {
-	//	Convey("then it returns metric not found error", func() {
-	//		//err := mc.Unsubscribe([]string{"test4"}, -1)
-	//		//So(err.Error(), ShouldContainSubstring, "Metric not found:")
-	//	})
-	//})
-	//Convey("when the metric's count is already 0", t, func() {
-	//	Convey("then it returns negative subscription count error", func() {
-	//		//err := mc.Unsubscribe([]string{"test1"}, -1)
-	//		//So(err, ShouldResemble, errNegativeSubCount)
-	//	})
-	//})
+	Convey("when the metric is not in the table", t, func() {
+		Convey("then it returns metric not found error", func() {
+			err := mc.Unsubscribe([]string{"test4"}, -1)
+			So(err.Error(), ShouldContainSubstring, "Metric not found:")
+		})
+	})
+	Convey("when the metric's count is already 0", t, func() {
+		Convey("then it returns negative subscription count error", func() {
+			err := mc.Unsubscribe([]string{"test1"}, -1)
+			So(err, ShouldResemble, errNegativeSubCount)
+		})
+	})
 }
 
 func TestSubscriptionCount(t *testing.T) {
@@ -555,8 +539,14 @@ func TestMetricNamespaceValidation(t *testing.T) {
 			err := validateMetricNamespace(ns)
 			So(err, ShouldBeNil)
 		})
-		Convey("contains unacceptable wildcardat at the end", func() {
+		Convey("contains unacceptable wildcard at the end", func() {
 			ns := core.NewNamespace("mock", "foo", "*")
+			err := validateMetricNamespace(ns)
+			So(err, ShouldNotBeNil)
+		})
+		Convey("contains unacceptable tuple", func() {
+			tuple := tuplePrefix + "item1" + tupleSeparator + "item2" + tupleSuffix
+			ns := core.NewNamespace("mock", "foo", tuple)
 			err := validateMetricNamespace(ns)
 			So(err, ShouldNotBeNil)
 		})

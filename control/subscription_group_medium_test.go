@@ -153,7 +153,7 @@ func TestSubscriptionGroups_ProcessStaticNegative(t *testing.T) {
 			So(subscribedPluginsContain(group.plugins, subsPlugin), ShouldBeTrue)
 			plgKey := key(group.plugins[0])
 			So(group.metrics, ShouldContainKey, plgKey)
-			metrics := group.metrics[plgKey].metricTypes
+			metrics := group.metrics[plgKey].Metrics()
 			So(len(metrics), ShouldEqual, 1)
 			So(len(group.requestedMetrics), ShouldEqual, 1)
 			So(metrics[0].Namespace().String(), ShouldEqual, group.requestedMetrics[0].Namespace().String())
@@ -181,7 +181,7 @@ func TestSubscriptionGroups_ProcessStaticNegative(t *testing.T) {
 				So(subscribedPluginsContain(group.plugins, anotherMock), ShouldBeFalse)
 				plgKey := key(group.plugins[0])
 				So(group.metrics, ShouldContainKey, plgKey)
-				metrics := group.metrics[plgKey].metricTypes
+				metrics := group.metrics[plgKey].Metrics()
 				So(len(metrics), ShouldEqual, 1)
 				So(len(group.requestedMetrics), ShouldEqual, 1)
 				So(metrics[0].Namespace().String(), ShouldEqual, group.requestedMetrics[0].Namespace().String())
@@ -224,7 +224,7 @@ func TestSubscriptionGroups_ProcessStaticPositive(t *testing.T) {
 			So(subscribedPluginsContain(group.plugins, mock1), ShouldBeTrue)
 			plgKey := key(group.plugins[0])
 			So(group.metrics, ShouldContainKey, plgKey)
-			metrics := group.metrics[plgKey].metricTypes
+			metrics := group.metrics[plgKey].Metrics()
 			So(len(metrics), ShouldEqual, 1)
 			So(len(group.requestedMetrics), ShouldEqual, 1)
 			So(metrics[0].Namespace().String(), ShouldEqual, group.requestedMetrics[0].Namespace().String())
@@ -251,7 +251,7 @@ func TestSubscriptionGroups_ProcessStaticPositive(t *testing.T) {
 				So(subscribedPluginsContain(group.plugins, mock2), ShouldBeTrue)
 				plgKey := key(group.plugins[0])
 				So(group.metrics, ShouldContainKey, plgKey)
-				metrics := group.metrics[plgKey].metricTypes
+				metrics := group.metrics[plgKey].Metrics()
 				So(len(metrics), ShouldEqual, 1)
 				So(len(group.requestedMetrics), ShouldEqual, 1)
 				So(metrics[0].Namespace().String(), ShouldEqual, group.requestedMetrics[0].Namespace().String())
@@ -297,7 +297,7 @@ func TestSubscriptionGroups_ProcessDynamicPositive(t *testing.T) {
 			So(subscribedPluginsContain(group.plugins, mock1), ShouldBeTrue)
 			plgKey := key(group.plugins[0])
 			So(group.metrics, ShouldContainKey, plgKey)
-			metrics := group.metrics[plgKey].metricTypes
+			metrics := group.metrics[plgKey].Metrics()
 			So(len(metrics), ShouldBeGreaterThan, 1)
 			So(len(group.requestedMetrics), ShouldEqual, 1)
 			mts1 := len(metrics)
@@ -326,8 +326,8 @@ func TestSubscriptionGroups_ProcessDynamicPositive(t *testing.T) {
 				plgKey2 := key(group.plugins[1])
 				So(group.metrics, ShouldContainKey, plgKey1)
 				So(group.metrics, ShouldContainKey, plgKey2)
-				metricsPlg1 := group.metrics[plgKey1].metricTypes
-				metricsPlg2 := group.metrics[plgKey2].metricTypes
+				metricsPlg1 := group.metrics[plgKey1].Metrics()
+				metricsPlg2 := group.metrics[plgKey2].Metrics()
 				So(len(metricsPlg1), ShouldBeGreaterThan, 1)
 				So(len(metricsPlg2), ShouldBeGreaterThan, 1)
 				So(len(group.requestedMetrics), ShouldEqual, 1)
@@ -372,7 +372,7 @@ func TestSubscriptionGroups_ProcessDynamicNegative(t *testing.T) {
 			So(subscribedPluginsContain(group.plugins, mock1), ShouldBeTrue)
 			plgKey := key(group.plugins[0])
 			So(group.metrics, ShouldContainKey, plgKey)
-			metrics := group.metrics[plgKey].metricTypes
+			metrics := group.metrics[plgKey].Metrics()
 			So(len(metrics), ShouldBeGreaterThan, 1)
 			So(len(group.requestedMetrics), ShouldEqual, 1)
 			mts1 := len(metrics)
@@ -399,7 +399,7 @@ func TestSubscriptionGroups_ProcessDynamicNegative(t *testing.T) {
 				So(subscribedPluginsContain(group.plugins, anotherMock1), ShouldBeFalse)
 				plgKey := key(group.plugins[0])
 				So(group.metrics, ShouldContainKey, plgKey)
-				metrics := group.metrics[plgKey].metricTypes
+				metrics := group.metrics[plgKey].Metrics()
 				So(len(metrics), ShouldBeGreaterThan, 1)
 				So(len(group.requestedMetrics), ShouldEqual, 1)
 				mts2 := len(metrics)
@@ -448,7 +448,7 @@ func TestSubscriptionGroups_ProcessSpecifiedDynamicPositive(t *testing.T) {
 			So(len(group.plugins), ShouldEqual, 1)
 			plgKey := key(group.plugins[0])
 			So(group.metrics, ShouldContainKey, plgKey)
-			metrics := group.metrics[plgKey].metricTypes
+			metrics := group.metrics[plgKey].Metrics()
 			// expected 1 subscribed metric: `/intel/mock/host0/baz`
 			So(len(metrics), ShouldEqual, 1)
 			So(len(group.requestedMetrics), ShouldEqual, 1)
@@ -478,8 +478,8 @@ func TestSubscriptionGroups_ProcessSpecifiedDynamicPositive(t *testing.T) {
 				plgKey2 := key(group.plugins[1])
 				So(group.metrics, ShouldContainKey, plgKey1)
 				So(group.metrics, ShouldContainKey, plgKey2)
-				metricsPlg1 := group.metrics[plgKey1].metricTypes
-				metricsPlg2 := group.metrics[plgKey2].metricTypes
+				metricsPlg1 := group.metrics[plgKey1].Metrics()
+				metricsPlg2 := group.metrics[plgKey2].Metrics()
 				// expected 1 subscribed metric per each plugin:
 				// `/intel/mock/host0/baz` and `/intel/anothermock/host0/baz`
 				So(len(metricsPlg1), ShouldEqual, 1)
@@ -528,7 +528,7 @@ func TestSubscriptionGroups_ProcessSpecifiedDynamicNegative(t *testing.T) {
 			So(subscribedPluginsContain(group.plugins, mock1), ShouldBeTrue)
 			plgKey := key(group.plugins[0])
 			So(group.metrics, ShouldContainKey, plgKey)
-			metrics := group.metrics[plgKey].metricTypes
+			metrics := group.metrics[plgKey].Metrics()
 			// expected 1 subscribed metrics:`/intel/mock/host0/baz`
 			So(len(metrics), ShouldEqual, 1)
 			So(len(group.requestedMetrics), ShouldEqual, 1)
@@ -557,7 +557,7 @@ func TestSubscriptionGroups_ProcessSpecifiedDynamicNegative(t *testing.T) {
 				So(subscribedPluginsContain(group.plugins, anotherMock1), ShouldBeFalse)
 				plgKey := key(group.plugins[0])
 				So(group.metrics, ShouldContainKey, plgKey)
-				metrics := group.metrics[plgKey].metricTypes
+				metrics := group.metrics[plgKey].Metrics()
 				// expected 1 subscribed metrics:`/intel/mock/host0/baz`
 				So(len(metrics), ShouldEqual, 1)
 				So(len(group.requestedMetrics), ShouldEqual, 1)
@@ -732,7 +732,7 @@ func TestSubscriptionGroups_GetStatic(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(pluginToMetricMap), ShouldEqual, 1)
 			So(pluginToMetricMap, ShouldContainKey, subsPluginKey)
-			metrics := pluginToMetricMap[subsPluginKey].metricTypes
+			metrics := pluginToMetricMap[subsPluginKey].Metrics()
 			So(len(metrics), ShouldEqual, 1)
 
 			pluginToMetricMap, serrs, err = sg.Get("task-fake-id")
@@ -781,7 +781,7 @@ func TestSubscriptionGroups_GetDynamic(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(pluginToMetricMap), ShouldEqual, 1)
 			So(pluginToMetricMap, ShouldContainKey, subsPluginKey)
-			metrics := pluginToMetricMap[subsPluginKey].metricTypes
+			metrics := pluginToMetricMap[subsPluginKey].Metrics()
 			So(len(metrics), ShouldBeGreaterThan, 1)
 
 			pluginToMetricMap, serrs, err = sg.Get("task-fake-id")
@@ -832,7 +832,7 @@ func TestSubscriptionGroups_GetSpecifiedDynamic(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(pluginToMetricMap), ShouldEqual, 1)
 			So(pluginToMetricMap, ShouldContainKey, subsPluginKey)
-			metrics := pluginToMetricMap[subsPluginKey].metricTypes
+			metrics := pluginToMetricMap[subsPluginKey].Metrics()
 			So(len(metrics), ShouldEqual, 1)
 
 			pluginToMetricMap, serrs, err = sg.Get("task-fake-id")

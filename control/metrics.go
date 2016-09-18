@@ -39,9 +39,9 @@ import (
 )
 
 const (
-	tuplePrefix    = "("
-	tupleSuffix    = ")"
-	tupleSeparator = "|"
+	tuplePrefix    = "["
+	tupleSuffix    = "]"
+	tupleSeparator = ";"
 )
 
 var (
@@ -94,6 +94,10 @@ func errorMetricStaticElementHasName(value, name, ns string) error {
 
 func errorMetricDynamicElementHasNoName(value, ns string) error {
 	return fmt.Errorf("A dynamic element %s requires a name for namespace %s.", value, ns)
+}
+
+func errorMetricElementHasTuple(value, ns string) error {
+	return fmt.Errorf("A element %s should not define tuple for namespace %s.", value, ns)
 }
 
 type metricCatalogItem struct {
@@ -338,6 +342,7 @@ func (mc *metricCatalog) GetMetric(requested core.Namespace, version int) (*metr
 			ns = specifyInstanceOfDynamicMetric(ns, requested)
 		}
 	}
+
 	returnedmt := &metricType{
 		Plugin:             catalogedmt.Plugin,
 		namespace:          ns,
@@ -348,6 +353,7 @@ func (mc *metricCatalog) GetMetric(requested core.Namespace, version int) (*metr
 		config:             catalogedmt.Config(),
 		unit:               catalogedmt.Unit(),
 		description:        catalogedmt.Description(),
+		subscriptions:      catalogedmt.SubscriptionCount(),
 	}
 	return returnedmt, nil
 }
@@ -382,6 +388,7 @@ func (mc *metricCatalog) GetMetrics(requested core.Namespace, version int) ([]*m
 					ns = specifyInstanceOfDynamicMetric(ns, rns)
 				}
 			}
+
 			returnedmt := &metricType{
 				Plugin:             catalogedmt.Plugin,
 				namespace:          ns,
@@ -392,6 +399,7 @@ func (mc *metricCatalog) GetMetrics(requested core.Namespace, version int) ([]*m
 				config:             catalogedmt.Config(),
 				unit:               catalogedmt.Unit(),
 				description:        catalogedmt.Description(),
+				subscriptions:      catalogedmt.SubscriptionCount(),
 			}
 			returnedmts = appendIfUnique(returnedmts, returnedmt)
 		}
@@ -444,31 +452,6 @@ func (mc *metricCatalog) Remove(ns core.Namespace) {
 	defer mc.mutex.Unlock()
 
 	mc.tree.Remove(ns.Strings())
-}
-
-// Item returns the current metricType in the collection. The method Next()
-// provides the  means to move the iterator forward.
-func (mc *metricCatalog) Item() (string, []*metricType) {
-	key := mc.keys[mc.currentIter-1]
-	ns := strings.Split(key, "/")
-	mtsi, _ := mc.tree.GetVersions(ns)
-	var mts []*metricType
-	for _, mt := range mtsi {
-		mts = append(mts, mt)
-	}
-	return key, mts
-}
-
-// Next returns true until the "end" of the collection is reached.  When
-// the end of the collection is reached the iterator is reset back to the
-// head of the collection.
-func (mc *metricCatalog) Next() bool {
-	mc.currentIter++
-	if mc.currentIter > len(mc.keys) {
-		mc.currentIter = 0
-		return false
-	}
-	return true
 }
 
 // Subscribe atomically increments a metric's subscription count in the table.
@@ -589,11 +572,20 @@ func addStandardAndWorkflowTags(m core.Metric, allTags map[string]map[string]str
 	return metric
 }
 
-// containTuple checks if a given element of namespace has a tuple, e.g. `(host0|host1)`
-// if tuple was found, returns true and recognized tuple's items
-func containTuple(nsElement string) (bool, []string) {
+// isTuple returns true when incoming namespace's element has been recognized as a tuple, otherwise returns false
+// notice, that the tuple is a string which starts with `tuplePrefix`, ends with `tupleSuffix` and contains at least one `tupleSeparator`
+// e.g. (host0;host1)
+func isTuple(element string) bool {
+	if strings.HasPrefix(element, tuplePrefix) && strings.HasSuffix(element, tupleSuffix) && strings.Contains(element, tupleSeparator) {
+		return true
+	}
+	return false
+}
+
+// containsTuple checks if a given element of namespace has a tuple; if yes, returns true and recognized tuple's items
+func containsTuple(nsElement string) (bool, []string) {
 	tupleItems := []string{}
-	if strings.HasPrefix(nsElement, tuplePrefix) && strings.HasSuffix(nsElement, tupleSuffix) && strings.Contains(nsElement, tupleSeparator) {
+	if isTuple(nsElement) {
 		if strings.ContainsAny(nsElement, "*") {
 			// an asterisk covers all tuples cases (eg. /intel/mock/(host0|host1|*)/baz)
 			// so to avoid retrieving the same metric more than once, return only '*' as a tuple's items
@@ -608,12 +600,12 @@ func containTuple(nsElement string) (bool, []string) {
 	return false, nil
 }
 
-// findTuplesMatches returns all matched combination of queried tuples in incoming namespace, where by a tuple there is a mean of `(host0|host1|host3)`
+// findTuplesMatches returns all matched combination of queried tuples in incoming namespace, where by a tuple there is a mean of `(host0;host1;host3)`
 // if the incoming namespace does not contain any tuple, return the incoming namespace as the only item in output slice
 // if the incoming namespace contains a tuple, return the copies of incoming namespace with appropriate values set to namespaces' elements
 func findTuplesMatches(incomingNs core.Namespace) []core.Namespace {
 	// How it works, exemplary incoming namespace:
-	// 	"intel", "mock", "(host0|host1)", "(baz|bar)"
+	// 	"intel", "mock", "(host0;host1)", "(baz;bar)"
 	//
 	// the following 4 namespaces will be returned:
 	// 	"intel", "mock", "host0", "baz"
@@ -626,7 +618,7 @@ func findTuplesMatches(incomingNs core.Namespace) []core.Namespace {
 
 	for index, element := range incomingNs.Strings() {
 		match := []string{}
-		if ok, tupleItems := containTuple(element); ok {
+		if ok, tupleItems := containsTuple(element); ok {
 			match = tupleItems
 		} else {
 			match = []string{element}
@@ -676,7 +668,8 @@ func specifyInstanceOfDynamicMetric(catalogedNamespace core.Namespace, requested
 	return specifiedNamespace
 }
 
-// validateMetricNamespace validates metric namespace in terms of containing properly defined dynamic elements and not ending with an asterisk
+// validateMetricNamespace validates metric namespace in terms of containing properly defined dynamic elements, not ending with an asterisk
+// and not contain elements which might be erroneously recognized as a tuple
 func validateMetricNamespace(ns core.Namespace) error {
 	value := ""
 	for _, i := range ns {
@@ -686,6 +679,9 @@ func validateMetricNamespace(ns core.Namespace) error {
 		}
 		if i.Name == "" && i.Value == "*" {
 			return errorMetricDynamicElementHasNoName(i.Value, ns.String())
+		}
+		if isTuple(i.Value) {
+			return errorMetricElementHasTuple(i.Value, ns.String())
 		}
 		value += i.Value
 	}

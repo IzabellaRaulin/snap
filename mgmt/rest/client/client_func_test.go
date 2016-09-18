@@ -164,7 +164,7 @@ func TestSnapClient(t *testing.T) {
 				Convey("invalid task (missing metric)", func() {
 					tt := c.CreateTask(sch, wf, "baron", "", true, 0)
 					So(tt.Err, ShouldNotBeNil)
-					So(tt.Err.Error(), ShouldContainSubstring, "No metric found below the given namespace: /intel/mock/foo (version: 0)")
+					So(tt.Err.Error(), ShouldContainSubstring, "Metric not found: /intel/mock/foo (version: 0)")
 				})
 			})
 		})

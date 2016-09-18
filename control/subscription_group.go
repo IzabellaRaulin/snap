@@ -206,14 +206,13 @@ func (s *subscriptionGroups) ValidateDeps(requested []core.RequestedMetric,
 
 	// validateMetricsTypes
 	for _, pmt := range pluginToMetricMap {
-		for _, mt := range pmt.metricTypes {
+		for _, mt := range pmt.Metrics() {
 			errs := s.validateMetric(mt)
 			if len(errs) > 0 {
 				serrs = append(serrs, errs...)
 			}
 		}
 	}
-
 	// add collectors to plugins (processors and publishers)
 	for _, collector := range collectors {
 		plugins = append(plugins, collector)
