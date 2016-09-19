@@ -38,12 +38,6 @@ import (
 	"github.com/intelsdi-x/snap/core/serror"
 )
 
-const (
-	tuplePrefix    = "("
-	tupleSuffix    = ")"
-	tupleSeparator = ";"
-)
-
 var (
 	errMetricNotFound     = errors.New("metric not found")
 	errEmptyMetricCatalog = errors.New("metric catalog is empty, no plugin loaded")
@@ -573,10 +567,10 @@ func addStandardAndWorkflowTags(m core.Metric, allTags map[string]map[string]str
 }
 
 // isTuple returns true when incoming namespace's element has been recognized as a tuple, otherwise returns false
-// notice, that the tuple is a string which starts with `tuplePrefix`, ends with `tupleSuffix` and contains at least one `tupleSeparator`
+// notice, that the tuple is a string which starts with `core.TuplePrefix`, ends with `core.TupleSuffix` and contains at least one `core.TupleSeparator`
 // e.g. (host0;host1)
 func isTuple(element string) bool {
-	if strings.HasPrefix(element, tuplePrefix) && strings.HasSuffix(element, tupleSuffix) && strings.Contains(element, tupleSeparator) {
+	if strings.HasPrefix(element, core.TuplePrefix) && strings.HasSuffix(element, core.TupleSuffix) && strings.Contains(element, core.TupleSeparator) {
 		return true
 	}
 	return false
@@ -591,8 +585,8 @@ func containsTuple(nsElement string) (bool, []string) {
 			// so to avoid retrieving the same metric more than once, return only '*' as a tuple's items
 			tupleItems = []string{"*"}
 		} else {
-			tuple := strings.TrimSuffix(strings.TrimPrefix(nsElement, tuplePrefix), tupleSuffix)
-			tuple = strings.Replace(tuple, tupleSeparator, " ", -1)
+			tuple := strings.TrimSuffix(strings.TrimPrefix(nsElement, core.TuplePrefix), core.TupleSuffix)
+			tuple = strings.Replace(tuple, core.TupleSeparator, " ", -1)
 			tupleItems = strings.Fields(tuple)
 		}
 		return true, tupleItems

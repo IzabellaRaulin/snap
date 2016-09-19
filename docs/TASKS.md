@@ -145,16 +145,18 @@ Declaring the same metric's name in task manifest as it is presented on metric l
 
  This allows to express metrics to collect by using
  - **a wildcard `*`** - that matches with any value in the metric namespace or, if the wildcard is in the end, with all metrics with given prefix
- - **a tuple**, `(metric1|metric2|metric3)` - that matches with all items separated by vertical bar; it works like logical _or_, so it gives an error only if none of these metrics can be collected
+ - **a tuple**, `(metric1;metric2;metric3)` - that matches with all items separated by semicolon and works like logical _and_, so it gives an error if even one of these metrics cannot be collected
 
 Metrics declared in task manifest   | Collected metrics
 ------------------------------------|------------------------
 /intel/mock/*                       | /intel/mock/foo <br/> /intel/mock/bar <br/> /intel/mock/host0/baz <br/> /intel/mock/host1/baz <br/> /intel/mock/host2/baz  <br/> /intel/mock/host3/baz  <br/> /intel/mock/host4/baz <br/> /intel/mock/host5/baz <br/> /intel/mock/host6/baz <br/> /intel/mock/host7/baz  <br/> /intel/mock/host8/baz <br/> /intel/mock/host9/baz <br/> <br/> _(collect all metrics with prefix "/intel/mock")_
 |
-/intel/mock/(foo\|bar)              | /intel/mock/foo <br/> /intel/mock/bar
-
+/intel/mock/(foo;bar)               | /intel/mock/foo <br/> /intel/mock/bar
+|
+/intel/mock/(host0;host1;host2)/baz | /intel/mock/host0/baz <br/> /intel/mock/host1/baz <br/> /intel/mock/host2/baz <br/>
 
 The namespaces are keys to another nested object which may contain a specific version of a plugin, e.g.:
+
 
 ```yaml
 ---

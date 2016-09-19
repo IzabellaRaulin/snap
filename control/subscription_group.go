@@ -242,7 +242,7 @@ func (p *subscriptionGroups) validatePluginSubscription(pl core.SubscribedPlugin
 		"_block": "validate-plugin-subscription",
 		"plugin": fmt.Sprintf("%s:%d", pl.Name(), pl.Version()),
 	}).Info(fmt.Sprintf("validating dependencies for plugin %s:%d", pl.Name(), pl.Version()))
-	lp, err := p.pluginManager.get(fmt.Sprintf("%s:%s:%d", pl.TypeName(), pl.Name(), pl.Version()))
+	lp, err := p.pluginManager.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pl.TypeName(), pl.Name(), pl.Version()))
 	if err != nil {
 		se := serror.New(fmt.Errorf("Plugin not found: type(%s) name(%s) version(%d)", pl.TypeName(), pl.Name(), pl.Version()))
 		se.SetFields(map[string]interface{}{
@@ -382,7 +382,7 @@ func (s *subscriptionGroup) subscribePlugins(id string,
 			"_block":  "subscriptionGroup.subscribePlugins",
 		}).Debug("plugin subscription")
 		if sub.Version() < 1 {
-			latest, err := s.pluginManager.get(fmt.Sprintf("%s:%s:%d", sub.TypeName(),
+			latest, err := s.pluginManager.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", sub.TypeName(),
 				sub.Name(), sub.Version()))
 			if err != nil {
 				serrs = append(serrs, serror.New(err))
@@ -407,7 +407,7 @@ func (s *subscriptionGroup) subscribePlugins(id string,
 				}
 			}
 		} else {
-			pool, err := s.pluginRunner.AvailablePlugins().getOrCreatePool(fmt.Sprintf("%s:%s:%d",
+			pool, err := s.pluginRunner.AvailablePlugins().getOrCreatePool(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d",
 				sub.TypeName(), sub.Name(), sub.Version()))
 			if err != nil {
 				serrs = append(serrs, serror.New(err))
@@ -415,7 +415,7 @@ func (s *subscriptionGroup) subscribePlugins(id string,
 			}
 			pool.Subscribe(id)
 			if pool.Eligible() {
-				pl, err := s.pluginManager.get(fmt.Sprintf("%s:%s:%d",
+				pl, err := s.pluginManager.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d",
 					sub.TypeName(), sub.Name(), sub.Version()))
 				if err != nil {
 					serrs = append(serrs, serror.New(err))
@@ -453,7 +453,7 @@ func (p *subscriptionGroup) unsubscribePlugins(id string,
 			"_block":  "subscriptionGroup.unsubscribePlugins",
 		}).Debug("plugin unsubscription")
 		pool, err := p.pluginRunner.AvailablePlugins().getPool(
-			fmt.Sprintf("%s:%s:%d", plugin.TypeName(),
+			fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", plugin.TypeName(),
 				plugin.Name(), plugin.Version()))
 		if err != nil {
 			serrs = append(serrs, err)
@@ -543,5 +543,5 @@ func comparePlugins(newPlugins,
 }
 
 func key(p core.SubscribedPlugin) string {
-	return fmt.Sprintf("%v:%v:%v", p.TypeName(), p.Name(), p.Version())
+	return fmt.Sprintf("%v"+core.Separator+"%v"+core.Separator+"%v", p.TypeName(), p.Name(), p.Version())
 }
