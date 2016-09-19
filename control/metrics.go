@@ -39,8 +39,8 @@ import (
 )
 
 const (
-	tuplePrefix    = "["
-	tupleSuffix    = "]"
+	tuplePrefix    = "("
+	tupleSuffix    = ")"
 	tupleSeparator = ";"
 )
 
@@ -587,12 +587,12 @@ func containsTuple(nsElement string) (bool, []string) {
 	tupleItems := []string{}
 	if isTuple(nsElement) {
 		if strings.ContainsAny(nsElement, "*") {
-			// an asterisk covers all tuples cases (eg. /intel/mock/(host0|host1|*)/baz)
+			// an asterisk covers all tuples cases (eg. /intel/mock/(host0;host1;*)/baz)
 			// so to avoid retrieving the same metric more than once, return only '*' as a tuple's items
 			tupleItems = []string{"*"}
 		} else {
-			tuple := strings.TrimSuffix(strings.TrimPrefix(nsElement, "("), ")")
-			tuple = strings.Replace(tuple, "|", " ", -1)
+			tuple := strings.TrimSuffix(strings.TrimPrefix(nsElement, tuplePrefix), tupleSuffix)
+			tuple = strings.Replace(tuple, tupleSeparator, " ", -1)
 			tupleItems = strings.Fields(tuple)
 		}
 		return true, tupleItems

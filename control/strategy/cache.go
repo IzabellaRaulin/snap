@@ -66,16 +66,6 @@ func (c *cache) get(ns string, version int) interface{} {
 	)
 
 	key := fmt.Sprintf("%v:%v", ns, version)
-
-	//todo iza - remove it
-	// if strings.Contains(key,"*") {
-	//	cacheLog.WithFields(log.Fields{
-	//		"namespace": key,
-	//		"_block":    "get",
-	//	}).Debug(fmt.Sprintf("cache omit [%s]", key))
-	//	return nil
-	//}
-
 	if cell, ok = c.table[key]; ok && chrono.Chrono.Now().Sub(cell.time) < c.ttl {
 		cell.hits++
 		cacheLog.WithFields(log.Fields{
@@ -105,15 +95,6 @@ func (c *cache) get(ns string, version int) interface{} {
 
 func (c *cache) put(ns string, version int, m interface{}) {
 	key := fmt.Sprintf("%v:%v", ns, version)
-
-	//todo iza - remove it
-	// if strings.Contains(key,"*") {
-	//	cacheLog.WithFields(log.Fields{
-	//		"namespace": key,
-	//		"_block":    "put",
-	//	}).Debug(fmt.Sprintf("cache omit [%s]", key))
-	//	return
-	//}
 
 	switch metric := m.(type) {
 	case core.Metric:
@@ -175,7 +156,6 @@ type listMetricInfo struct {
 func (c *cache) updateCache(mts []core.Metric) {
 	dc := map[string]*listMetricInfo{}
 	for _, mt := range mts {
-		// todo iza - show it
 		isDynamic, idx := mt.Namespace().IsDynamic()
 		if isDynamic {
 			// cache dynamic metrics

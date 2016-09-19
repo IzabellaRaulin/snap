@@ -1017,7 +1017,7 @@ func (p *pluginControl) PublishMetrics(metrics []core.Metric, config map[string]
 	for k, v := range config {
 		merged[k] = v
 	}
-	return p.pluginRunner.AvailablePlugins().publishMetrics(metrics, pluginName, pluginVersion, config, taskID)
+	return p.pluginRunner.AvailablePlugins().publishMetrics(metrics, pluginName, pluginVersion, merged, taskID)
 }
 
 // ProcessMetrics
@@ -1038,7 +1038,7 @@ func (p *pluginControl) ProcessMetrics(metrics []core.Metric, config map[string]
 		merged[k] = v
 	}
 
-	return p.pluginRunner.AvailablePlugins().processMetrics(metrics, pluginName, pluginVersion, config, taskID)
+	return p.pluginRunner.AvailablePlugins().processMetrics(metrics, pluginName, pluginVersion, merged, taskID)
 }
 
 func (p *pluginControl) SetAutodiscoverPaths(paths []string) {
