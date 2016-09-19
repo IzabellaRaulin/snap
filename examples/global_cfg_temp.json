@@ -1,0 +1,27 @@
+{
+    "control": {
+        "plugins": {
+            "collector": {
+                "mock": {
+                  "all": {
+		    "name": "iza",
+                    "fake_global_collector_setting1": "http://localhost:5000/v2.0/",
+		    "fake_global_collector_setting2": 1.5,
+		    "fake_global_collector_setting3": 1024
+                  }
+                }
+            },
+            "publisher": {
+                "mock-file": {
+                  "all": {
+	              "file": "/tmp/fake_file_path.log",
+                    "fake_global_publisher_setting1": "http://localhost:5000/v2.0/",
+                    "fake_global__publisher_setting2": 1.5,
+                    "fake_global__publisher_setting3": 1024
+                  }
+                }
+	  },
+            "processor": {}
+        }
+    }
+}

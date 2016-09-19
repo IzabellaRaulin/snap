@@ -95,6 +95,7 @@ func (c *cache) get(ns string, version int) interface{} {
 
 func (c *cache) put(ns string, version int, m interface{}) {
 	key := fmt.Sprintf("%v:%v", ns, version)
+
 	switch metric := m.(type) {
 	case core.Metric:
 		if _, ok := c.table[key]; ok {
@@ -177,10 +178,12 @@ func (c *cache) updateCache(mts []core.Metric) {
 		// cache the individual metric
 		c.put(mt.Namespace().String(), mt.Version(), mt)
 	}
+
 	// write our dynamic metrics to the cache.
 	for _, v := range dc {
 		c.put(v.namespace, v.version, v.metrics)
 	}
+
 }
 
 func (c *cache) allCacheHits() uint64 {
