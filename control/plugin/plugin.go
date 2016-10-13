@@ -23,11 +23,9 @@ package plugin
 import (
 	"bytes"
 	"crypto/rsa"
-	"encoding/json"
 	"fmt"
 	"io" // Don't use "fmt.Print*"
 	"net"
-	"net/http"
 	"net/rpc"
 	"net/rpc/jsonrpc"
 	"regexp"
@@ -84,7 +82,6 @@ type RPCType int
 
 const (
 	NativeRPC RPCType = iota
-	JSONRPC
 	GRPC
 )
 
@@ -260,7 +257,7 @@ type Response struct {
 // PluginMeta - base information about plugin
 // Plugin - CollectorPlugin, ProcessorPlugin or PublisherPlugin
 // requestString - plugins arguments (marshaled json of control/plugin Arg struct)
-// returns an error and exitCode (exitCode from SessionState initilization or plugin termination code)
+// returns an error and exitCode (exitCode from SessionState initialization or plugin termination code)
 func Start(m *PluginMeta, c Plugin, requestString string) (error, int) {
 	s, sErr, retCode := NewSessionState(requestString, c, m)
 	if sErr != nil {
@@ -344,28 +341,28 @@ func Start(m *PluginMeta, c Plugin, requestString string) (error, int) {
 	s.Logger().Debugf("Session token %s\n", s.Token())
 
 	switch r.Meta.RPCType {
-	case JSONRPC:
-		rpc.HandleHTTP()
-		http.HandleFunc("/rpc", func(w http.ResponseWriter, req *http.Request) {
-			defer req.Body.Close()
-			w.Header().Set("Content-Type", "application/json")
-			if req.ContentLength == 0 {
-				encoder := json.NewEncoder(w)
-				encoder.Encode(&struct {
-					Id     interface{} `json:"id"`
-					Result interface{} `json:"result"`
-					Error  interface{} `json:"error"`
-				}{
-					Id:     nil,
-					Result: nil,
-					Error:  "rpc: method request ill-formed",
-				})
-				return
-			}
-			res := NewRPCRequest(req.Body).Call()
-			io.Copy(w, res)
-		})
-		go http.Serve(l, nil)
+	//case JSONRPC:
+	//	rpc.HandleHTTP()
+	//	http.HandleFunc("/rpc", func(w http.ResponseWriter, req *http.Request) {
+	//		defer req.Body.Close()
+	//		w.Header().Set("Content-Type", "application/json")
+	//		if req.ContentLength == 0 {
+	//			encoder := json.NewEncoder(w)
+	//			encoder.Encode(&struct {
+	//				Id     interface{} `json:"id"`
+	//				Result interface{} `json:"result"`
+	//				Error  interface{} `json:"error"`
+	//			}{
+	//				Id:     nil,
+	//				Result: nil,
+	//				Error:  "rpc: method request ill-formed",
+	//			})
+	//			return
+	//		}
+	//		res := NewRPCRequest(req.Body).Call()
+	//		io.Copy(w, res)
+	//	})
+	//	go http.Serve(l, nil)
 	case NativeRPC:
 		go func() {
 			for {
@@ -396,8 +393,8 @@ func Start(m *PluginMeta, c Plugin, requestString string) (error, int) {
 // rpcRequest represents a RPC request.
 // rpcRequest implements the io.ReadWriteCloser interface.
 type rpcRequest struct {
-	r    io.Reader     // holds the JSON formated RPC request
-	rw   io.ReadWriter // holds the JSON formated RPC response
+	r    io.Reader     // holds the JSON formatted RPC request
+	rw   io.ReadWriter // holds the JSON formatted RPC response
 	done chan bool     // signals then end of the RPC request
 }
 

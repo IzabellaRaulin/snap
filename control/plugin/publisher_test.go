@@ -40,8 +40,8 @@ func (f *MockPublisher) Publish(_ string, _ []byte, _ map[string]ctypes.ConfigVa
 	return nil
 }
 
-func (f *MockPublisher) GetConfigPolicy() cpolicy.ConfigPolicy {
-	return cpolicy.ConfigPolicy{}
+func (f *MockPublisher) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
+	return &cpolicy.ConfigPolicy{}, nil
 }
 
 type MockPublisherSessionState struct {
@@ -107,15 +107,23 @@ func (s *MockPublisherSessionState) heartbeatWatch(killChan chan int) {
 func TestStartPublisher(t *testing.T) {
 	Convey("Publisher", t, func() {
 		Convey("start with dynamic port", func() {
-			c := new(MockProcessor)
+			c := new(MockPublisher)
+			//todo iza
 			m := &PluginMeta{
-				RPCType: JSONRPC,
-				Type:    PublisherPluginType,
+				//RPCType: JSONRPC,
+				Type: PublisherPluginType,
 			}
-			// we will panic since rpc.HandleHttp has already
-			// been called during TestStartCollector
-			Convey("RPC service already registered", func() {
-				So(func() { Start(m, c, "{}") }, ShouldPanic)
+			//todo iza - ask
+			/*
+				// we will panic since rpc.HandleHttp has already
+				// been called during TestStartCollector
+				Convey("RPC service already registered", func() {
+					So(func() { Start(m, c, "{}") }, ShouldPanic)
+				})
+			*/
+
+			Convey("start publisher should not panic", func() {
+				So(func() { Start(m, c, "{}") }, ShouldNotPanic)
 			})
 
 		})

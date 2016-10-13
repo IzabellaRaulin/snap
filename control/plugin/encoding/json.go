@@ -26,6 +26,7 @@ import (
 	"github.com/intelsdi-x/snap/control/plugin/encrypter"
 )
 
+//todo iza - check if it can be removed
 type jsonEncoder struct {
 	e *encrypter.Encrypter
 }

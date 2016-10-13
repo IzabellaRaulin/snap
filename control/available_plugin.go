@@ -95,17 +95,10 @@ func newAvailablePlugin(resp plugin.Response, emitter gomit.Emitter, ep executab
 	}
 	ap.key = fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", ap.pluginType.String(), ap.name, ap.version)
 
-	listenURL := fmt.Sprintf("http://%v/rpc", resp.ListenAddress)
 	// Create RPC Client
 	switch resp.Type {
 	case plugin.CollectorPluginType:
 		switch resp.Meta.RPCType {
-		case plugin.JSONRPC:
-			c, e := client.NewCollectorHttpJSONRPCClient(listenURL, DefaultClientTimeout, resp.PublicKey, !resp.Meta.Unsecure)
-			if e != nil {
-				return nil, errors.New("error while creating client connection: " + e.Error())
-			}
-			ap.client = c
 		case plugin.NativeRPC:
 			c, e := client.NewCollectorNativeClient(resp.ListenAddress, DefaultClientTimeout, resp.PublicKey, !resp.Meta.Unsecure)
 			if e != nil {
