@@ -72,9 +72,8 @@ const (
 type RPCType int
 
 const (
-	NativeRPC RPCType = iota
-	JSONRPC
-	GRPC
+	NativeRPC RPCType = 0
+	GRPC      RPCType = 2
 )
 
 var (
