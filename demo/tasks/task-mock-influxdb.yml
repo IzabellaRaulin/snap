@@ -1,0 +1,26 @@
+---
+  version: 1
+  schedule: 
+    type: "simple"
+    interval: "1s"
+  max-failures: 10
+  workflow: 
+    collect: 
+      metrics: 
+        /intel/*: {}
+      config: 
+        /intel/mock: 
+          name: "root"
+          password: "secret"          
+      publish: 
+        - 
+          plugin_name: "influxdb"
+          config: 
+             host: "172.17.0.20"
+             port: 8086
+             database: "snap"
+             retention: "autogen"
+             user: "root"
+             password: "root"
+             https: false
+             skip-verify: false

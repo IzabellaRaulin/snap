@@ -1,0 +1,40 @@
+{
+    "version": 1,
+    "schedule": {
+        "type": "simple",
+        "interval": "1s"
+    },
+    "workflow": {
+        "collect": {
+            "metrics": {
+         	"/intel/procfs/*" : {}
+            },
+            "process": [
+                {
+                    "plugin_name": "passthru",
+                    "process": null,
+                    "publish": [
+                        {
+                            "plugin_name": "file",
+                            "config": {
+                                "file": "/tmp/published_metrics.log"
+                            }
+                        },
+                        {
+                            "plugin_name": "influxdb",
+                            "config": {
+				"host": "104.154.115.55",
+			        "port": 8086,
+				"database": "snap",
+             			"user": "root",
+		        	"password": "root"
+                            }
+                        }
+                    ],
+                    "config": null
+                }
+            ],
+            "publish": null
+        }
+    }
+}
