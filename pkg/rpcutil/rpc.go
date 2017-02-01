@@ -22,8 +22,9 @@ package rpcutil
 import (
 	"fmt"
 	"time"
-
 	"google.golang.org/grpc"
+	"errors"
+	"crypto/tls"
 )
 
 // GetClientConnection returns a grcp.ClientConn that is unsecured
@@ -37,5 +38,30 @@ func GetClientConnection(addr string, port int) (*grpc.ClientConn, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return conn, nil
+}
+
+func GetClientTLSConnection(addr string, port int, certPath string, keyPath string) (*grpc.ClientConn, error) {
+	grpcDialOpts := []grpc.DialOption{
+		grpc.WithTimeout(2 * time.Second),
+	}
+	certificate, err := tls.LoadX509KeyPair(certPath, keyPath)
+	if err != nil {
+		return nil, errors.New("Invalid certificate given")
+	}
+	tlsConfig := tls.Config{
+		ClientAuth: tls.RequireAndVerifyClientCert,
+		Certificates: []tls.Certificate{certificate},
+	}
+
+
+	//todo Iza change it
+	grpcDialOpts = append(grpcDialOpts, grpc.WithTransportCredentials(tlsConfig))
+	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", addr, port), grpcDialOpts...)
+	if err != nil {
+		return nil, err
+	}
+
 	return conn, nil
 }
