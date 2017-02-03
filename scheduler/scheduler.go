@@ -285,6 +285,11 @@ func (s *scheduler) CreateTaskTribe(sch schedule.Schedule, wfMap *wmap.WorkflowM
 }
 
 func (s *scheduler) createTask(sch schedule.Schedule, wfMap *wmap.WorkflowMap, startOnCreate bool, source string, opts ...core.TaskOption) (core.Task, core.TaskErrors) {
+	log.WithFields(log.Fields{
+		"module": "scheduler/scheduler.go",
+		"block": "createTask",
+	}).Info("Debug Iza - START creating task by scheduler")
+
 	logger := schedulerLogger.WithFields(log.Fields{
 		"_block":          "create-task",
 		"source":          source,
@@ -378,6 +383,12 @@ func (s *scheduler) createTask(sch schedule.Schedule, wfMap *wmap.WorkflowMap, s
 			te.errs = append(te.errs, errs...)
 		}
 	}
+
+	log.WithFields(log.Fields{
+		"module": "scheduler/scheduler.go:289",
+		"block": "createTask",
+	}).Info("Debug Iza - END creating task by scheduler")
+
 
 	return task, te
 }

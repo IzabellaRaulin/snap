@@ -79,6 +79,13 @@ type availablePlugin struct {
 // newAvailablePlugin returns an availablePlugin with information from a
 // plugin.Response
 func newAvailablePlugin(resp plugin.Response, emitter gomit.Emitter, ep executablePlugin) (*availablePlugin, error) {
+	log.WithFields(log.Fields{
+		"module": "control/available_plugin.go",
+		"block": "newAvailablePlugin",
+		"resp.Meta.Name": resp.Meta.Name,
+		"resp.Type": resp.Type,
+	}).Info("Debug Iza - creating a new available plugin based on response")
+
 	if resp.Type != plugin.CollectorPluginType && resp.Type != plugin.ProcessorPluginType && resp.Type != plugin.PublisherPluginType {
 		return nil, strategy.ErrBadType
 	}
@@ -104,6 +111,8 @@ func newAvailablePlugin(resp plugin.Response, emitter gomit.Emitter, ep executab
 				"_module":     "control-aplugin",
 				"_block":      "newAvailablePlugin",
 				"plugin_name": ap.name,
+				"resp.PublicKey": resp.PublicKey,
+				"resp.Meta.Unsecure": resp.Meta.Unsecure,
 			}).Warning("This plugin is using a deprecated RPC protocol. Find more information here: https://github.com/intelsdi-x/snap/issues/1289 ")
 			c, e := client.NewCollectorNativeClient(resp.ListenAddress, DefaultClientTimeout, resp.PublicKey, !resp.Meta.Unsecure)
 			if e != nil {
@@ -111,6 +120,13 @@ func newAvailablePlugin(resp plugin.Response, emitter gomit.Emitter, ep executab
 			}
 			ap.client = c
 		case plugin.GRPC:
+			log.WithFields(log.Fields{
+				"_module":     "control-aplugin",
+				"_block":      "newAvailablePlugin",
+				"plugin_name": ap.name,
+				"resp.PublicKey": resp.PublicKey,
+				"resp.Meta.Unsecure": resp.Meta.Unsecure,
+			}).Info("Debug Iza - creating new collector GRPC client 1")
 			c, e := client.NewCollectorGrpcClient(resp.ListenAddress, DefaultClientTimeout, resp.PublicKey, !resp.Meta.Unsecure)
 			if e != nil {
 				return nil, errors.New("error while creating client connection: " + e.Error())
@@ -128,6 +144,13 @@ func newAvailablePlugin(resp plugin.Response, emitter gomit.Emitter, ep executab
 			}
 			ap.client = c
 		case plugin.GRPC:
+			log.WithFields(log.Fields{
+				"_module":     "control-aplugin",
+				"_block":      "newAvailablePlugin",
+				"plugin_name": ap.name,
+				"resp.PublicKey": resp.PublicKey,
+				"resp.Meta.Unsecure": resp.Meta.Unsecure,
+			}).Info("Debug Iza - creating new publisher GRPC client")
 			c, e := client.NewPublisherGrpcClient(resp.ListenAddress, DefaultClientTimeout, resp.PublicKey, !resp.Meta.Unsecure)
 			if e != nil {
 				return nil, errors.New("error while creating client connection: " + e.Error())
@@ -145,6 +168,13 @@ func newAvailablePlugin(resp plugin.Response, emitter gomit.Emitter, ep executab
 			}
 			ap.client = c
 		case plugin.GRPC:
+			log.WithFields(log.Fields{
+				"_module":     "control-aplugin",
+				"_block":      "newAvailablePlugin",
+				"plugin_name": ap.name,
+				"resp.PublicKey": resp.PublicKey,
+				"resp.Meta.Unsecure": resp.Meta.Unsecure,
+			}).Info("Debug Iza - creating new processor GRPC client")
 			c, e := client.NewProcessorGrpcClient(resp.ListenAddress, DefaultClientTimeout, resp.PublicKey, !resp.Meta.Unsecure)
 			if e != nil {
 				return nil, errors.New("error while creating client connection: " + e.Error())
@@ -321,6 +351,12 @@ func newAvailablePlugins() *availablePlugins {
 }
 
 func (ap *availablePlugins) insert(pl *availablePlugin) error {
+	log.WithFields(log.Fields{
+			"block": "control/available_plugin.go:355",
+			"module": "insert",
+			"plugin_name": pl.Name(),
+			"key": fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pl.TypeName(), pl.name, pl.version),
+		}).Info("Debug Iza - inserting an available plugin under key")
 	if pl.pluginType != plugin.CollectorPluginType && pl.pluginType != plugin.ProcessorPluginType && pl.pluginType != plugin.PublisherPluginType {
 		return strategy.ErrBadType
 	}
@@ -331,6 +367,11 @@ func (ap *availablePlugins) insert(pl *availablePlugin) error {
 	key := fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pl.TypeName(), pl.name, pl.version)
 	_, exists := ap.table[key]
 	if !exists {
+		log.WithFields(log.Fields{
+			"block": "control/available_plugin.go:355",
+			"module": "insert",
+			"key": key,
+		}).Info("Debug Iza - no pool for this key, so create a new one")
 		p, err := strategy.NewPool(key, pl)
 		if err != nil {
 			return serror.New(ErrBadKey, map[string]interface{}{

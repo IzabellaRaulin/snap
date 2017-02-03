@@ -28,11 +28,20 @@ import (
 	"text/tabwriter"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
+
 	"github.com/urfave/cli"
 )
 
 func loadPlugin(ctx *cli.Context) error {
 	pAsc := ctx.String("plugin-asc")
+	log.WithFields(log.Fields{
+		"module": "cmd/snaptel/plugin.go",
+		"block": "loadPlugin",
+		"pAsc": pAsc,
+		"ctx.Args": ctx.Args(),
+	}).Info("Debug Iza - checking asc")
+
 	var paths []string
 	if len(ctx.Args()) != 1 {
 		return newUsageError("Incorrect usage:", ctx)
@@ -44,6 +53,12 @@ func loadPlugin(ctx *cli.Context) error {
 		}
 		paths = append(paths, pAsc)
 	}
+	log.WithFields(log.Fields{
+		"module": "cmd/snaptel/plugin.go",
+		"block": "loadPlugin",
+		"paths": paths,
+	}).Info("Debug Iza - START loading plugin")
+
 	r := pClient.LoadPlugin(paths)
 	if r.Err != nil {
 		if r.Err.Fields()["error"] != nil {

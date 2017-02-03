@@ -267,6 +267,11 @@ func New(cfg *Config) *pluginControl {
 func (p *pluginControl) HandleGomitEvent(e gomit.Event) {
 	switch v := e.Body.(type) {
 	case *control_event.LoadPluginEvent:
+		log.WithFields(log.Fields{
+			"module": "control/control.go",
+			"block": "pluginControl.HandleGomitEvent",
+			"event": "LoadPluginEvent",
+		})
 		serrs := p.subscriptionGroups.Process()
 		if serrs != nil {
 			for _, err := range serrs {
@@ -310,6 +315,10 @@ func (p *pluginControl) Start() error {
 
 	//Autodiscover
 	if p.Config.AutoDiscoverPath != "" {
+		log.WithFields(log.Fields{
+			"module": "control/control.go",
+			"block": "pluginControlStart",
+		}).Info("Debug Iza - starting plugin with autoDiscoverPath ON")
 		controlLogger.WithFields(log.Fields{
 			"_block": "start",
 		}).Info("auto discover path is enabled")
@@ -410,6 +419,10 @@ func (p *pluginControl) Start() error {
 							}).Error(err)
 						}
 					}
+					log.WithFields(log.Fields{
+						"module": "control/control.go:421",
+						"block": "pluginControl.Start",
+					}).Info("Debug Iza - do loading requested plugin")
 					pl, err := p.Load(rp)
 					if err != nil {
 						controlLogger.WithFields(log.Fields{
@@ -431,6 +444,11 @@ func (p *pluginControl) Start() error {
 			}
 		}
 	} else {
+		log.WithFields(log.Fields{
+			"module": "control/control.go",
+			"block": "pluginControlStart",
+		}).Info("Debug Iza - starting plugin with autoDiscoverPath OFF")
+
 		controlLogger.WithFields(log.Fields{
 			"_block": "start",
 		}).Info("auto discover path is disabled")
@@ -444,6 +462,11 @@ func (p *pluginControl) Start() error {
 
 	opts := []grpc.ServerOption{}
 	p.closingChan = make(chan bool, 1)
+	log.WithFields(log.Fields{
+			"module": "control/control.go",
+			"block": "pluginControlStart",
+	}).Info("Debug Iza - creating new grpc server??")
+
 	p.grpcServer = grpc.NewServer(opts...)
 	rpc.RegisterMetricManagerServer(p.grpcServer, &ControlGRPCServer{p})
 	p.wg.Add(1)
@@ -506,6 +529,11 @@ func (p *pluginControl) Load(rp *core.RequestedPlugin) (core.CatalogedPlugin, se
 		"_block": "load",
 	}
 
+	log.WithFields(log.Fields{
+		"module": "control/control.go",
+		"block": "pluginControl.Load",
+	}).Info("Debug Iza - START load requested plugin by plugin control")
+
 	details, serr := p.returnPluginDetails(rp)
 	if serr != nil {
 		return nil, serr
@@ -522,6 +550,10 @@ func (p *pluginControl) Load(rp *core.RequestedPlugin) (core.CatalogedPlugin, se
 		return nil, se
 	}
 
+	log.WithFields(log.Fields{
+		"module": "control/control.go",
+		"block": "pluginControl.Load",
+	}).Info("Debug Iza - load requested plugin by pluginManager")
 	pl, se := p.pluginManager.LoadPlugin(details, p.eventManager)
 	if se != nil {
 		return nil, se
@@ -541,6 +573,10 @@ func (p *pluginControl) Load(rp *core.RequestedPlugin) (core.CatalogedPlugin, se
 		Signed:  pl.Details.Signed,
 	}
 	defer p.eventManager.Emit(event)
+	log.WithFields(log.Fields{
+		"module": "control/control.go",
+		"block": "pluginControl.Load",
+	}).Info("Debug Iza - END requested plugin by plugin control")
 	return pl, nil
 }
 
@@ -548,15 +584,36 @@ func (p *pluginControl) verifySignature(rp *core.RequestedPlugin) (bool, serror.
 	f := map[string]interface{}{
 		"_block": "verifySignature",
 	}
+
+	log.WithFields(log.Fields{
+		"module": "control/control.go",
+		"block": "verifySignature",
+	}).Info("Debug Iza - verification of signature depend on plugintrust level")
+
 	switch p.pluginTrust {
 	case PluginTrustDisabled:
+		log.WithFields(log.Fields{
+			"module": "control/control.go",
+			"block": "verifySignature",
+			"pluginTrustLevel": "PluginTrustDisabled",
+		}).Info("Debug Iza - skip verification")
 		return false, nil
 	case PluginTrustEnabled:
+			log.WithFields(log.Fields{
+			"module": "control/control.go",
+			"block": "verifySignature",
+			"pluginTrustLevel": "PluginTrustEnabled",
+		}).Info("Debug Iza - doverification")
 		err := p.signingManager.ValidateSignature(p.keyringFiles, rp.Path(), rp.Signature())
 		if err != nil {
 			return false, serror.New(err)
 		}
 	case PluginTrustWarn:
+			log.WithFields(log.Fields{
+			"module": "control/control.go",
+			"block": "verifySignature",
+			"pluginTrustLevel": "PluginTrustWarn",
+		}).Info("Debug Iza - do verification, but only warn")
 		if rp.Signature() == nil {
 			controlLogger.WithFields(f).Warn("Loading unsigned plugin ", rp.Path())
 			return false, nil
@@ -571,9 +628,21 @@ func (p *pluginControl) verifySignature(rp *core.RequestedPlugin) (bool, serror.
 }
 
 func (p *pluginControl) returnPluginDetails(rp *core.RequestedPlugin) (*pluginDetails, serror.SnapError) {
+
+	log.WithFields(log.Fields{
+		"module": "control/control.go",
+		"block": "returnPluginDetails",
+	}).Info("Debug Iza - get plugin detail")
+
 	details := &pluginDetails{}
 	var serr serror.SnapError
 	//Check plugin signing
+
+	log.WithFields(log.Fields{
+		"module": "control/control.go",
+		"block": "returnPluginDetails",
+	}).Info("Debug Iza - verificate signature of requestedPlugin")
+
 	details.Signed, serr = p.verifySignature(rp)
 	if serr != nil {
 		return nil, serr

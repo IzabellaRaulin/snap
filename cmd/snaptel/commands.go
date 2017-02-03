@@ -104,6 +104,8 @@ var (
 					Action: loadPlugin,
 					Flags: []cli.Flag{
 						flPluginAsc,
+						flPluginCertIza,
+						flPluginKeyIza,
 					},
 				},
 				{

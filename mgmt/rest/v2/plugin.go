@@ -90,6 +90,10 @@ func (p *plugin) TypeName() string {
 }
 
 func (s *apiV2) loadPlugin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	log.WithFields(log.Fields{
+		"module": "mgmt/rest/v2/plugin.go",
+		"block": "apiV2.loadPlugin",
+	}).Info("Debug Iza - loading plugin by rest v2")
 	mediaType, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
 		Write(415, FromError(err), w)

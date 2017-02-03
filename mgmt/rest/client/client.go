@@ -36,6 +36,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
+
 	"github.com/asaskevich/govalidator"
 
 	"github.com/intelsdi-x/snap/mgmt/rest/v1/rbody"
@@ -179,6 +181,12 @@ func (c *Client) do(method, path string, ct contentType, body ...[]byte) (*rbody
 		err error
 		req *http.Request
 	)
+	log.WithFields(log.Fields{
+		"module": "mgmt/rest/client/client.go",
+		"block": "client.do",
+		"method": method,
+	}).Info("Debug Iza - creating http request")
+
 	switch method {
 	case "GET":
 		req, err = http.NewRequest(method, c.prefix+path, nil)
@@ -251,6 +259,7 @@ func (c *Client) do(method, path string, ct contentType, body ...[]byte) (*rbody
 		}
 		addAuth(req, c.Username, c.Password)
 		req.Header.Add("Content-Type", ct.String())
+
 		rsp, err = c.http.Do(req)
 		if err != nil {
 			if strings.Contains(err.Error(), "tls: oversized record") || strings.Contains(err.Error(), "malformed HTTP response") {
@@ -296,6 +305,13 @@ func httpRespToAPIResp(rsp *http.Response) (*rbody.APIResponse, error) {
 }
 
 func (c *Client) pluginUploadRequest(pluginPaths []string) (*rbody.APIResponse, error) {
+	log.WithFields(log.Fields{
+		"module": "mgmt/rest/client/client.go",
+		"block": "client.pluginUploadRequest",
+		"plugin": pluginPaths,
+		"plugin_cn": len(pluginPaths),
+	}).Info("Debug Iza - loadplugin 2")
+
 	errChan := make(chan error)
 	pr, pw := io.Pipe()
 	writer := multipart.NewWriter(pw)

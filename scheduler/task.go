@@ -97,6 +97,11 @@ func newTask(s schedule.Schedule, wf *schedulerWorkflow, m *workManager, mm mana
 	name := fmt.Sprintf("Task-%s", taskID)
 	wf.eventEmitter = emitter
 	mgrs := newManagers(mm)
+
+	log.WithFields(log.Fields{
+		"module": "task.go",
+		"block": "newTask",
+	}).Info("Debug Iza - creating task clients")
 	err := createTaskClients(&mgrs, wf)
 	if err != nil {
 		return nil, err
@@ -464,6 +469,14 @@ func createTaskClients(mgrs *managers, wf *schedulerWorkflow) error {
 }
 
 func walkWorkflow(prnodes []*processNode, pbnodes []*publishNode, mgrs *managers) error {
+	log.WithFields(log.Fields{
+		"module": "task.go",
+		"block": "walkWorkflow",
+		"prnodes": len(prnodes),
+		"pbnodes": len(pbnodes),
+	}).Info("Debug Iza - START creating walkWorkflow for process and publish nodes")
+
+	//todo iza - see for distributed workflow, so pr.Target wil not be empty
 	for _, pr := range prnodes {
 		if pr.Target != "" {
 			host, port, err := net.SplitHostPort(pr.Target)
@@ -474,10 +487,21 @@ func walkWorkflow(prnodes []*processNode, pbnodes []*publishNode, mgrs *managers
 			if err != nil {
 				return err
 			}
+			log.WithFields(log.Fields{
+				"module": "task.go",
+				"block": "walkWorkflow",
+				"node_type": "processNodes",
+				"node_name": pr.Name(),
+			}).Info("Debug Iza - creating a new controlproxy for process node")
 			proxy, err := controlproxy.New(host, p)
 			if err != nil {
 				return err
 			}
+			log.WithFields(log.Fields{
+				"module": "task.go",
+				"block": "walkWorkflow",
+				"pr_target": pr.Target,
+			}).Info("Debug Iza - Adding processor proxy to mgrs")
 			mgrs.Add(pr.Target, proxy)
 		}
 		err := walkWorkflow(pr.ProcessNodes, pr.PublishNodes, mgrs)
@@ -486,6 +510,7 @@ func walkWorkflow(prnodes []*processNode, pbnodes []*publishNode, mgrs *managers
 		}
 
 	}
+		//todo iza - see for distributed workflow, so pb.Target wil not be empty
 	for _, pu := range pbnodes {
 		if pu.Target != "" {
 			host, port, err := net.SplitHostPort(pu.Target)
@@ -496,12 +521,28 @@ func walkWorkflow(prnodes []*processNode, pbnodes []*publishNode, mgrs *managers
 			if err != nil {
 				return err
 			}
+			log.WithFields(log.Fields{
+				"module": "task.go",
+				"block": "walkWorkflow",
+				"node_type": "publishNodes",
+				"node_name": pu.Name(),
+			}).Info("Debug Iza - creating a new controlproxy for publish node")
 			proxy, err := controlproxy.New(host, p)
 			if err != nil {
 				return err
 			}
+			log.WithFields(log.Fields{
+				"module": "task.go",
+				"block": "walkWorkflow",
+				"pr_target": pu.Target,
+			}).Info("Debug Iza - Adding publisher proxy to mgrs")
 			mgrs.Add(pu.Target, proxy)
 		}
 	}
+
+	log.WithFields(log.Fields{
+		"module": "task.go",
+		"block": "walkWorkflow",
+	}).Info("Debug Iza - END creating walkWorkflow for process and publish nodes")
 	return nil
 }

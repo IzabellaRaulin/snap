@@ -166,6 +166,8 @@ type pluginDetails struct {
 	Path         string
 	Signed       bool
 	Signature    []byte
+	Iza_Certificate  []string
+	Iza_Key	     []string
 }
 
 type loadedPlugin struct {
@@ -311,6 +313,10 @@ func (p *pluginManager) SetMetricCatalog(mc catalogsMetrics) {
 // LoadPlugin is the method for loading a plugin and
 // saving plugin into the LoadedPlugins array
 func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter) (*loadedPlugin, serror.SnapError) {
+	log.WithFields(log.Fields{
+			"block": "control/plugin_manager.go:317",
+			"medium": "LoadPlugin",
+	}).Info("Debug Iza - LoadPlugin based on details")
 	lPlugin := new(loadedPlugin)
 	lPlugin.Details = details
 	lPlugin.State = DetectedState
@@ -318,6 +324,7 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 	pmLogger.WithFields(log.Fields{
 		"_block": "load-plugin",
 		"path":   filepath.Base(lPlugin.Details.Exec[0]),
+		"details_signed": details.Signed,
 	}).Info("plugin load called")
 	// We will create commands by appending the ExecPath to the actual command.
 	// The ExecPath is a temporary location where the plugin/package will be
@@ -326,6 +333,10 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 	for i, e := range lPlugin.Details.Exec {
 		commands[i] = path.Join(lPlugin.Details.ExecPath, e)
 	}
+	log.WithFields(log.Fields{
+		"block": "control/plugin_manager.go:336",
+		"medium": "LoadPlugin",
+	}).Info("Debug Iza - creating a new executable plugin")
 	ePlugin, err := plugin.NewExecutablePlugin(
 		p.GenerateArgs(int(log.GetLevel())),
 		commands...)
@@ -341,6 +352,11 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 		"_block": "load-plugin",
 		"path":   lPlugin.Details.Exec,
 	}).Debug(fmt.Sprintf("plugin load timeout set to %ds", p.pluginLoadTimeout))
+
+	log.WithFields(log.Fields{
+		"block": "control/plugin_manager.go:355",
+		"medium": "LoadPlugin",
+	}).Info("Debug Iza - running the executable plugin")
 	resp, err := ePlugin.Run(time.Second * time.Duration(p.pluginLoadTimeout))
 	if err != nil {
 		pmLogger.WithFields(log.Fields{
@@ -349,6 +365,7 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 		}).Error("load plugin error when starting plugin")
 		return nil, serror.New(err)
 	}
+
 
 	ePlugin.SetName(resp.Meta.Name)
 
@@ -371,8 +388,18 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 	}
 
 	if resp.Meta.Unsecure {
+		log.WithFields(log.Fields{
+			"block": "control/plugin_manager.go",
+			"medium": "LoadPlugin",
+			"resp.Meta.Unsecure": resp.Meta.Unsecure,
+		}).Info("Debug Iza - calling PING/SetKey??? for unsecure resp")
 		err = ap.client.Ping()
 	} else {
+		log.WithFields(log.Fields{
+			"block": "control/plugin_manager.go",
+			"medium": "LoadPlugin",
+			"resp.Meta.Unsecure": resp.Meta.Unsecure,
+		}).Info("Debug Iza - calling setKey for secure resp")
 		err = ap.client.SetKey()
 	}
 
@@ -389,7 +416,16 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 	if !ok {
 		return nil, serror.New(errors.New("missing GetConfigPolicy function"))
 	}
+	log.WithFields(log.Fields{
+		"module": "control/plugin_manager.go",
+		"block": "LoadPlugin",
+	}).Info("Debug Iza - calling client GetConfigPolicy!!!")
 	cp, err := c.GetConfigPolicy()
+
+	log.WithFields(log.Fields{
+		"module": "control/plugin_manager.go",
+		"block": "LoadPlugin",
+	}).Info("Debug Iza - END calling client GetConfigPolicy!!!")
 	if err != nil {
 		pmLogger.WithFields(log.Fields{
 			"_block":         "load-plugin",
@@ -433,7 +469,15 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 
 			// Update config policy with defaults
 			cfgNode = cfgNode.ReverseMerge(defaults)
+			log.WithFields(log.Fields{
+				"module": "control/plugin_manager.go",
+				"block": "LoadPlugin",
+			}).Info("Debug Iza - calling client GetConfigPolicy PO RAZ DRUGI !!!")
 			cp, err = c.GetConfigPolicy()
+			log.WithFields(log.Fields{
+				"module": "control/plugin_manager.go",
+				"block": "LoadPlugin",
+			}).Info("Debug Iza - END calling client GetConfigPolicy PO RAZ DRUGI !!!")
 			if err != nil {
 				pmLogger.WithFields(log.Fields{
 					"_block":         "load-plugin",
@@ -453,6 +497,11 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 		cfg := plugin.ConfigType{
 			ConfigDataNode: cfgNode,
 		}
+
+		log.WithFields(log.Fields{
+			"module": "control/plugin_manager.go",
+			"block": "LoadPlugin",
+		}).Info("Debug Iza - client calling GetMetricTypes!!!")
 
 		metricTypes, err := colClient.GetMetricTypes(cfg)
 		if err != nil {
@@ -518,6 +567,11 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 		}
 	}
 
+	log.WithFields(log.Fields{
+		"module": "control/plugin_manager.go",
+		"block": "LoadPlugin",
+	}).Info("Debug Iza - killing client !!!")
+
 	// Added so clients can adequately clean up connections
 	ap.client.Kill("Retrieved necessary plugin info")
 	err = ePlugin.Kill()
@@ -548,6 +602,10 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 		return nil, aErr
 	}
 
+	log.WithFields(log.Fields{
+		"module": "control/plugin_manager.go:591",
+		"block": "LoadPlugin",
+	}).Info("Debug Iza - returning lPlugin")
 	return lPlugin, nil
 }
 

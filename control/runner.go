@@ -75,6 +75,11 @@ type runner struct {
 }
 
 func newRunner() *runner {
+	log.WithFields(log.Fields{
+		"module": "control/runner.go",
+		"block": "newRunner",
+	}).Info("Debug Iza - creating a new runner")
+
 	r := &runner{
 		monitor:          newMonitor(),
 		availablePlugins: newAvailablePlugins(),
@@ -156,7 +161,23 @@ func (r *runner) Stop() []error {
 }
 
 func (r *runner) startPlugin(p executablePlugin) (*availablePlugin, error) {
+	log.WithFields(log.Fields{
+		"module": "control/runner.go",
+		"block": "startPlugin",
+		"executablePlugin": "unknown",
+	}).Info("Debug Iza - start plugin from executable")
+
 	resp, err := p.Run(time.Second * 5)
+	//debug iza - nie dawaj tu logowania!!!
+	//log.WithFields(log.Fields{
+	//	"module": "control/runner.go",
+	//	"block": "startPlugin",
+	//	"executablePlugin": "unknown",
+	//	"resp_publicKey": resp.PublicKey.E,
+	//	"resp_token": resp.Token,
+	//	"resp_state": resp.State,
+	//}).Info("Debug Iza - run plugin from executable")
+
 	if err != nil {
 		e := errors.New("error starting plugin: " + err.Error())
 		runnerLog.WithFields(log.Fields{
@@ -174,14 +195,24 @@ func (r *runner) startPlugin(p executablePlugin) (*availablePlugin, error) {
 		}).Error("error starting a plugin")
 		return nil, e
 	}
+	log.WithFields(log.Fields{
+		"module": "control/runner.go",
+		"block": "startPlugin",
+	}).Info("Debug Iza - build available plugin")
 
 	// build availablePlugin
 	ap, err := newAvailablePlugin(resp, r.emitter, p)
+
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.Meta.Unsecure {
+		log.WithFields(log.Fields{
+			"block": "control/runner.go:209",
+			"medium": "LoadPlugin",
+			"resp.Meta.Unsecure": resp.Meta.Unsecure,
+		}).Info("Debug Iza - calling PING for unsecure resp, podobny kod do plugin_manager")
 		err = ap.client.Ping()
 	} else {
 		err = ap.client.SetKey()
@@ -305,6 +336,12 @@ func (r *runner) HandleGomitEvent(e gomit.Event) {
 }
 
 func (r *runner) runPlugin(name string, details *pluginDetails) error {
+	log.WithFields(log.Fields{
+		"module": "control/runner.go:339",
+		"block": "runner.runPlugin",
+		"name": "name",
+		"details_signed": details.Signed,
+	}).Info("Debug Iza - run incoming plugin based on details")
 	if details.IsPackage {
 		f, err := os.Open(details.Path)
 		if err != nil {
@@ -321,6 +358,10 @@ func (r *runner) runPlugin(name string, details *pluginDetails) error {
 	for i, e := range details.Exec {
 		commands[i] = path.Join(details.ExecPath, e)
 	}
+	log.WithFields(log.Fields{
+		"module": "control/runner.go",
+		"block": "runner.runPlugin",
+	}).Info("Debug Iza - create a nex executable plugin")
 	ePlugin, err := plugin.NewExecutablePlugin(r.pluginManager.GenerateArgs(int(log.GetLevel())), commands...)
 	if err != nil {
 		runnerLog.WithFields(log.Fields{
@@ -331,6 +372,10 @@ func (r *runner) runPlugin(name string, details *pluginDetails) error {
 		return err
 	}
 	ePlugin.SetName(name)
+	log.WithFields(log.Fields{
+		"module": "control/runner.go",
+		"block": "runner.runPlugin",
+	}).Info("Debug Iza - start ePlugin")
 	ap, err := r.startPlugin(ePlugin)
 	if err != nil {
 		runnerLog.WithFields(log.Fields{

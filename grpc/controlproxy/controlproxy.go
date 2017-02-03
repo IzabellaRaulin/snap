@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/core/cdata"
@@ -48,7 +49,15 @@ type ControlProxy struct {
 	Client rpc.MetricManagerClient
 }
 
+// New creates a gRPC client with a given config
 func New(addr string, port int) (ControlProxy, error) {
+	log.WithFields(log.Fields{
+		"module": "controlproxy",
+		"block": "New gRPC client",
+		"addr": addr,
+		"port": port,
+	}).Info("Debug IZA, creating a gRPC client")
+
 	conn, err := rpcutil.GetClientConnection(addr, port)
 	if err != nil {
 		return ControlProxy{}, err

@@ -26,6 +26,8 @@ import (
 	"strconv"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
+
 	"github.com/intelsdi-x/snap/core/serror"
 	"github.com/intelsdi-x/snap/mgmt/rest/v1/rbody"
 )
@@ -33,6 +35,11 @@ import (
 // LoadPlugin loads plugins for the given plugin names.
 // A slide of loaded plugins returns if succeeded. Otherwise, an error is returned.
 func (c *Client) LoadPlugin(p []string) *LoadPluginResult {
+	log.WithFields(log.Fields{
+		"module": "mgmt/rest/client/plugin.go",
+		"block": "client.LoadPlugin",
+		"plugin": p,
+	}).Info("Debug Iza - loadplugin")
 	r := new(LoadPluginResult)
 	resp, err := c.pluginUploadRequest(p)
 	if err != nil {

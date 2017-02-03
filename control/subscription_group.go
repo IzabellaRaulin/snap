@@ -384,6 +384,10 @@ func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 
 func (s *subscriptionGroup) subscribePlugins(id string,
 	plugins []core.SubscribedPlugin) (serrs []serror.SnapError) {
+	log.WithFields(log.Fields{
+		"module": "control/subscription_group.go",
+		"block": "subscriptionGroup.subscribePlugins",
+	}).Info("Debug Iza - STARTsubscribePlugins")
 	plgs := make([]*loadedPlugin, len(plugins))
 	// First range through plugins to verify if all required plugins
 	// are available
@@ -405,23 +409,51 @@ func (s *subscriptionGroup) subscribePlugins(id string,
 			"version": plg.Version(),
 			"_block":  "subscriptionGroup.subscribePlugins",
 		}).Debug("plugin subscription")
+
+		log.WithFields(log.Fields{
+			"module": "control/subscription_group.go",
+			"block": "subscriptionGroup.subscribePlugins",
+			"key": plg.Key(),
+		}).Info("Debug Iza - get or create pool for key")
 		pool, err := s.pluginRunner.AvailablePlugins().getOrCreatePool(plg.Key())
 		if err != nil {
 			serrs = append(serrs, serror.New(err))
 			return serrs
 		}
+		log.WithFields(log.Fields{
+			"module": "control/subscription_group.go",
+			"block": "subscriptionGroup.subscribePlugins",
+			"id": id,
+		}).Info("Debug Iza - subscribe pool this ID")
 		pool.Subscribe(id)
 		if pool.Eligible() {
+			log.WithFields(log.Fields{
+			"module": "control/subscription_group.go",
+			"block": "subscriptionGroup.subscribePlugins",
+			}).Info("Debug Iza - START verify plugin")
 			err = s.verifyPlugin(plg)
 			if err != nil {
 				serrs = append(serrs, serror.New(err))
 				return serrs
 			}
+			log.WithFields(log.Fields{
+			"module": "control/subscription_group.go",
+			"block": "subscriptionGroup.subscribePlugins",
+			}).Info("Debug Iza - END verify plugin")
+
+			log.WithFields(log.Fields{
+			"module": "control/subscription_group.go",
+			"block": "subscriptionGroup.subscribePlugins",
+			}).Info("Debug Iza - start run plugin")
 			err = s.pluginRunner.runPlugin(plg.Name(), plg.Details)
 			if err != nil {
 				serrs = append(serrs, serror.New(err))
 				return serrs
 			}
+			log.WithFields(log.Fields{
+			"module": "control/subscription_group.go",
+			"block": "subscriptionGroup.subscribePlugins",
+			}).Info("Debug Iza - end run plugin")
 		}
 
 		serr := s.sendPluginSubscriptionEvent(id, plg)
@@ -430,6 +462,10 @@ func (s *subscriptionGroup) subscribePlugins(id string,
 			return serrs
 		}
 	}
+	log.WithFields(log.Fields{
+		"module": "control/subscription_group.go",
+		"block": "subscriptionGroup.subscribePlugins",
+	}).Info("Debug Iza - END subscribePlugins")
 	return serrs
 }
 

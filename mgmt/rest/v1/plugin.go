@@ -70,6 +70,10 @@ func (p *plugin) TypeName() string {
 }
 
 func (s *apiV1) loadPlugin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	log.WithFields(log.Fields{
+		"module": "mgmt/rest/v1/plugin.go",
+		"block": "apiV1.loadPlugin",
+	}).Info("Debug Iza - loading plugin by rest v1")
 	mediaType, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
 		rbody.Write(500, rbody.FromError(err), w)
@@ -161,8 +165,18 @@ func (s *apiV1) loadPlugin(w http.ResponseWriter, r *http.Request, _ httprouter.
 			rbody.Write(500, rbody.FromError(e), w)
 			return
 		}
+		log.WithFields(log.Fields{
+			"module": "mgmt/rest/v1/plugin.go",
+			"block": "apiV1.loadPlugin",
+		}).Info("Debug Iza - setting a signature")
 		rp.SetSignature(signature)
 		restLogger.Info("Loading plugin: ", rp.Path())
+
+		log.WithFields(log.Fields{
+			"module": "mgmt/rest/v1/plugin.go",
+			"block": "apiV1.loadPlugin",
+		}).Info("Debug Iza - continue loading in metricManager")
+
 		pl, err := s.metricManager.Load(rp)
 		if err != nil {
 			var ec int
@@ -185,6 +199,10 @@ func (s *apiV1) loadPlugin(w http.ResponseWriter, r *http.Request, _ httprouter.
 		lp.LoadedPlugins = append(lp.LoadedPlugins, catalogedPluginToLoaded(r.Host, pl))
 		rbody.Write(201, lp, w)
 	}
+	log.WithFields(log.Fields{
+		"module": "mgmt/rest/v1/plugin.go",
+		"block": "apiV1.loadPlugin",
+	}).Info("Debug Iza - finishing loading plugin by rest v1")
 }
 
 func writeFile(filename string, b []byte) (string, error) {

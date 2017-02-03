@@ -153,6 +153,8 @@ func NewArg(logLevel int, pprof bool) Arg {
 	}
 }
 
+//control/plugin/plugin.go:157
+
 // Response from started plugin
 type Response struct {
 	Meta          PluginMeta

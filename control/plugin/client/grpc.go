@@ -135,6 +135,13 @@ func parseAddress(address string) (string, int64, error) {
 }
 
 func newGrpcClient(addr string, port int, timeout time.Duration, typ plugin.PluginType) (*grpcClient, error) {
+	log.WithFields(log.Fields{
+		"_module":     "control/plugin/client/grpc.go",
+		"_block":      "newGrpcClient",
+		"addr": addr,
+		"port": port,
+	}).Info("Debug Iza - creating new GRPC client")
+
 	conn, err := rpcutil.GetClientConnection(addr, port)
 	if err != nil {
 		return nil, err
@@ -167,14 +174,26 @@ func getContext(timeout time.Duration) context.Context {
 }
 
 func (g *grpcClient) Ping() error {
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "grpcClient.Ping",
+	}).Info("Debug Iza - pinging a grpc server")
 	_, err := g.plugin.Ping(getContext(g.timeout), &rpc.Empty{})
 	if err != nil {
 		return err
 	}
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "grpcClient.Ping",
+	}).Info("Debug Iza - END pinging a grpc server")
 	return nil
 }
 
 func (g *grpcClient) SetKey() error {
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "SetKey",
+	}).Info("Debug Iza -setting a key????")
 	// Added to conform to interface but not needed by grpc
 	return nil
 }
@@ -224,6 +243,10 @@ func (g *grpcClient) Process(metrics []core.Metric, config map[string]ctypes.Con
 }
 
 func (g *grpcClient) CollectMetrics(mts []core.Metric) ([]core.Metric, error) {
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "grpcClient.CollectMetrics",
+	}).Info("Debug Iza - collecting a metric")
 	arg := &rpc.MetricsArg{
 		Metrics: NewMetrics(mts),
 	}
@@ -238,10 +261,19 @@ func (g *grpcClient) CollectMetrics(mts []core.Metric) ([]core.Metric, error) {
 	}
 
 	metrics := ToCoreMetrics(reply.Metrics)
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "grpcClient.CollectMetrics",
+	}).Info("Debug Iza - END collecting a metric")
 	return metrics, nil
 }
 
 func (g *grpcClient) GetMetricTypes(config plugin.ConfigType) ([]core.Metric, error) {
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "grpcClient.GetMetricTypes",
+	}).Info("Debug Iza - getting metric types")
+
 	arg := &rpc.GetMetricTypesArg{
 		Config: ToConfigMap(config.Table()),
 	}
@@ -256,10 +288,18 @@ func (g *grpcClient) GetMetricTypes(config plugin.ConfigType) ([]core.Metric, er
 	}
 
 	results := ToCoreMetrics(reply.Metrics)
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "grpcClient.GetMetricTypes",
+	}).Info("Debug Iza - END getting metric types")
 	return results, nil
 }
 
 func (g *grpcClient) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "grpcClient.GetConfigPolicy",
+	}).Info("Debug Iza - getting config policy")
 	reply, err := g.plugin.GetConfigPolicy(getContext(g.timeout), &rpc.Empty{})
 
 	if err != nil {
@@ -270,6 +310,10 @@ func (g *grpcClient) GetConfigPolicy() (*cpolicy.ConfigPolicy, error) {
 		return nil, errors.New(reply.Error)
 	}
 
+	log.WithFields(log.Fields{
+		"module": "control/plugin/client/grpc.go",
+		"block": "grpcClient.GetConfigPolicy",
+	}).Info("Debug Iza - END getting config policy")
 	return rpc.ToConfigPolicy(reply), nil
 }
 
