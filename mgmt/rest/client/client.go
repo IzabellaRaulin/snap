@@ -335,6 +335,7 @@ func (c *Client) pluginUploadRequest(pluginPaths []string) (*rbody.APIResponse, 
 		bufin := bufio.NewReader(file)
 		bufins = append(bufins, bufin)
 
+//todo iza - add loggin here
 		paths = append(paths, filepath.Base(pluginPath))
 	}
 	// with io.Pipe the write needs to be async

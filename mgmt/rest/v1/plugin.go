@@ -80,6 +80,10 @@ func (s *apiV1) loadPlugin(w http.ResponseWriter, r *http.Request, _ httprouter.
 		return
 	}
 	if strings.HasPrefix(mediaType, "multipart/") {
+		//todo iza
+		var certPath string
+		var keyPath string
+
 		var pluginPath string
 		var signature []byte
 		var checkSum [sha256.Size]byte
@@ -125,7 +129,69 @@ func (s *apiV1) loadPlugin(w http.ResponseWriter, r *http.Request, _ httprouter.
 			// If we loop around more than twice before receiving io.EOF, then
 			// an error is returned.
 
-			switch {
+
+//todo iza - add logging, more sophisticated switch case
+switch {
+			case i == 0:
+				if filepath.Ext(p.FileName()) == ".asc" {
+					e := errors.New("Error: first file passed to load plugin api can not be signature file")
+					rbody.Write(500, rbody.FromError(e), w)
+					return
+				}
+				if pluginPath, err = writeFile(p.FileName(), b); err != nil {
+					rbody.Write(500, rbody.FromError(err), w)
+					return
+				}
+				checkSum = sha256.Sum256(b)
+			case i < 4:
+				if filepath.Ext(p.FileName()) == ".asc" {
+					signature = b
+				} else if strings.HasPrefix(p.FileName(), "crt.") {
+					certPath = string(b)
+					if _, err := os.Stat(certPath); os.IsNotExist(err) {
+						e := errors.New("Error: given certificate file is not available")
+						rbody.Write(500, rbody.FromError(e), w)
+						return
+					}
+				} else if strings.HasPrefix(p.FileName(), "key.") {
+					keyPath = string(b)
+					if _, err := os.Stat(keyPath); os.IsNotExist(err) {
+						e := errors.New("Error: given key file is not available")
+						rbody.Write(500, rbody.FromError(e), w)
+						return
+					}
+				} else {
+					e := errors.New("Error: unrecognized file passed was")
+					rbody.Write(500, rbody.FromError(e), w)
+					return
+				}
+			//case i == 2:
+			//	if strings.HasPrefix(p.FileName(), "crt.") {
+			//		certPath = string(b)
+			//		if _, err := os.Stat(certPath); os.IsNotExist(err) {
+			//			e := errors.New("Error: given certificate file is not available")
+			//			rbody.Write(500, rbody.FromError(e), w)
+			//			return
+			//		}
+			//	}
+			//case i == 3:
+			//	if strings.HasPrefix(p.FileName(), "key.") {
+			//		keyPath = string(b)
+			//		if _, err := os.Stat(keyPath); os.IsNotExist(err) {
+			//			e := errors.New("Error: given key file is not available")
+			//			rbody.Write(500, rbody.FromError(e), w)
+			//			return
+			//		}
+			//	}
+			case i == 4:
+				e := errors.New("Error: More than four files passed to the load plugin api")
+				rbody.Write(500, rbody.FromError(e), w)
+				return
+			}
+
+
+
+/* previous version			switch {
 			case i == 0:
 				if filepath.Ext(p.FileName()) == ".asc" {
 					e := errors.New("Error: first file passed to load plugin api can not be signature file")
@@ -150,6 +216,7 @@ func (s *apiV1) loadPlugin(w http.ResponseWriter, r *http.Request, _ httprouter.
 				rbody.Write(500, rbody.FromError(e), w)
 				return
 			}
+*/
 			i++
 		}
 		rp, err := core.NewRequestedPlugin(pluginPath)
@@ -157,7 +224,11 @@ func (s *apiV1) loadPlugin(w http.ResponseWriter, r *http.Request, _ httprouter.
 			rbody.Write(500, rbody.FromError(err), w)
 			return
 		}
+//todo iza
+		rp.SetCertPath(certPath)
+		rp.SetKeyPath(keyPath)
 		rp.SetAutoLoaded(false)
+		
 		// Sanity check, verify the checkSum on the file sent is the same
 		// as after it is written to disk.
 		if rp.CheckSum() != checkSum {

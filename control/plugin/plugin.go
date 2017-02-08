@@ -143,7 +143,22 @@ type Arg struct {
 
 	// enable pprof
 	Pprof bool
+
+	//todo iza
+	CertPath string
+	//todo iza
+	KeyPath string
 }
+
+func (a Arg) SetCertPath(certPath string) Arg {
+	a.CertPath = certPath
+	return a
+}
+
+func (a Arg) SetKeyPath(keyPath string) Arg {
+	a.KeyPath = keyPath
+	return a
+ }
 
 func NewArg(logLevel int, pprof bool) Arg {
 	return Arg{

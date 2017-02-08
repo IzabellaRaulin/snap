@@ -99,6 +99,8 @@ type RequestedPlugin struct {
 	checkSum   [sha256.Size]byte
 	signature  []byte
 	autoLoaded bool
+	certPath string
+	keyPath string
 }
 
 func NewRequestedPlugin(path string) (*RequestedPlugin, error) {
@@ -126,6 +128,16 @@ func (p *RequestedPlugin) Signature() []byte {
 	return p.signature
 }
 
+//todo iza
+func (p *RequestedPlugin) CertPath() string {
+	return p.certPath
+}
+
+//todo iza
+func (p *RequestedPlugin) KeyPath() string {
+	return p.keyPath
+}
+
 func (p *RequestedPlugin) AutoLoaded() bool {
 	return p.autoLoaded
 }
@@ -136,6 +148,15 @@ func (p *RequestedPlugin) SetPath(path string) {
 
 func (p *RequestedPlugin) SetSignature(data []byte) {
 	p.signature = data
+}
+
+//todo iza
+func (p *RequestedPlugin) SetCertPath(certPath string) {
+	p.certPath = certPath
+}
+//todo iza
+func (p *RequestedPlugin) SetKeyPath(keyPath string) {
+	p.keyPath = keyPath
 }
 
 func (p *RequestedPlugin) SetAutoLoaded(isAutoLoaded bool) {

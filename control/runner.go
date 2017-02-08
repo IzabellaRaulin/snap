@@ -362,7 +362,12 @@ func (r *runner) runPlugin(name string, details *pluginDetails) error {
 		"module": "control/runner.go",
 		"block": "runner.runPlugin",
 	}).Info("Debug Iza - create a nex executable plugin")
-	ePlugin, err := plugin.NewExecutablePlugin(r.pluginManager.GenerateArgs(int(log.GetLevel())), commands...)
+
+//todo iza
+	ePlugin, err := plugin.NewExecutablePlugin(r.pluginManager.GenerateArgs(int(log.GetLevel())).
+		SetCertPath(details.CertPath).
+		SetKeyPath(details.KeyPath), commands...)
+
 	if err != nil {
 		runnerLog.WithFields(log.Fields{
 			"_block": "run-plugin",

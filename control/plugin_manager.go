@@ -166,8 +166,8 @@ type pluginDetails struct {
 	Path         string
 	Signed       bool
 	Signature    []byte
-	Iza_Certificate  []string
-	Iza_Key	     []string
+	CertPath     string
+	KeyPath	     string
 }
 
 type loadedPlugin struct {
@@ -337,8 +337,12 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 		"block": "control/plugin_manager.go:336",
 		"medium": "LoadPlugin",
 	}).Info("Debug Iza - creating a new executable plugin")
+
+//todo iza
 	ePlugin, err := plugin.NewExecutablePlugin(
-		p.GenerateArgs(int(log.GetLevel())),
+		p.GenerateArgs(int(log.GetLevel())).
+		SetCertPath(details.CertPath).
+		SetKeyPath(details.KeyPath),
 		commands...)
 	if err != nil {
 		pmLogger.WithFields(log.Fields{

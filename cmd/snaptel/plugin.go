@@ -21,6 +21,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -35,6 +36,9 @@ import (
 
 func loadPlugin(ctx *cli.Context) error {
 	pAsc := ctx.String("plugin-asc")
+	pCert := ctx.String("plugin-cert")
+	pKey := ctx.String("plugin-key")
+
 	log.WithFields(log.Fields{
 		"module": "cmd/snaptel/plugin.go",
 		"block": "loadPlugin",
@@ -43,15 +47,53 @@ func loadPlugin(ctx *cli.Context) error {
 	}).Info("Debug Iza - checking asc")
 
 	var paths []string
-	if len(ctx.Args()) != 1 {
+	if len(ctx.Args()) == 0 || len(ctx.Args()) > 3 {
 		return newUsageError("Incorrect usage:", ctx)
 	}
+	log.WithFields(log.Fields{
+		"module": "cmd/snaptel/plugin.go",
+		"block": "loadPlugin",
+		"ctx.Args.First": ctx.Args().First(),
+	}).Info("Debug Iza - checking asc")
+
 	paths = append(paths, ctx.Args().First())
 	if pAsc != "" {
 		if !strings.Contains(pAsc, ".asc") {
 			return newUsageError("Must be a .asc file for the -a flag", ctx)
 		}
 		paths = append(paths, pAsc)
+	}
+
+//todo iza - zmiany
+
+	log.WithFields(log.Fields{
+		"module": "cmd/snaptel/plugin.go",
+		"block": "loadPlugin",
+		"pCert": pCert,
+		"pKey": pKey,
+	}).Info("Debug Iza - snaptel cmd")
+
+	if pCert != "" {
+		tmpFile, err := ioutil.TempFile("", "crt.")
+		if err != nil {
+			return fmt.Errorf("Error processing plugin certificate - unable to create link:\n%v", err.Error())
+		}
+		_, err = tmpFile.WriteString(pCert)
+		if err != nil {
+			return fmt.Errorf("Error processing plugin certificate - unable to write link:\n%v", err.Error())
+		}
+		paths = append(paths, tmpFile.Name())
+	}
+	if pKey != "" {
+		tmpFile, err := ioutil.TempFile("", "key.")
+		if err != nil {
+			return fmt.Errorf("Error processing plugin key - unable to create link:\n%v", err.Error())
+		}
+		_, err = tmpFile.WriteString(pKey)
+		if err != nil {
+			return fmt.Errorf("Error processing plugin key - unable to write link:\n%v", err.Error())
+		}
+		paths = append(paths, tmpFile.Name())
 	}
 	log.WithFields(log.Fields{
 		"module": "cmd/snaptel/plugin.go",
@@ -72,6 +114,7 @@ func loadPlugin(ctx *cli.Context) error {
 		fmt.Printf("Version: %d\n", p.Version)
 		fmt.Printf("Type: %s\n", p.Type)
 		fmt.Printf("Signed: %v\n", p.Signed)
+		fmt.Printf("Secured: %v\n", p.Secured)
 		fmt.Printf("Loaded Time: %s\n\n", p.LoadedTime().Format(timeFormat))
 	}
 
