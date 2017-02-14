@@ -88,6 +88,10 @@ type task struct {
 
 //NewTask creates a Task
 func newTask(s schedule.Schedule, wf *schedulerWorkflow, m *workManager, mm managesMetrics, emitter gomit.Emitter, opts ...core.TaskOption) (*task, error) {
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "newTask",
+	}).Info("Debug Iza, creating a new tasks")
 
 	//Task would always be given a default name.
 	//However if a user want to change this name, she can pass optional arguments, in form of core.TaskOption
@@ -214,6 +218,12 @@ func (t *task) GetStopOnFailure() int {
 // Spin will start a task spinning in its own routine while it waits for its
 // schedule.
 func (t *task) Spin() {
+
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.Spin",
+	}).Info("Debug Iza, task spinning")
+
 	// We need to lock long enough to change state
 	t.Lock()
 	defer t.Unlock()
@@ -222,8 +232,27 @@ func (t *task) Spin() {
 	// in time that a task starts spinning. E.g. stopping a task,
 	// waiting a period of time, and starting the task won't show
 	// misses for the interval while stopped.
-	t.lastFireTime = time.Now()
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.Spin",
+		"lastFireTime_before": t.lastFireTime,
+		}).Info("Debug Iza, setting lastFireTime as time.Now")
+
+
+	//todo iza - changed from time.Now to unset lastFireTime
+	t.lastFireTime = time.Time{}
+
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.Spin",
+		"lastFireTime_after": t.lastFireTime,
+	}).Info("Debug Iza, setting lastFireTime as time.Now")
+
 	if t.state == core.TaskStopped {
+		log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.Spin",
+		}).Info("Debug Iza, changing task state from stopped to spinning")
 		t.state = core.TaskSpinning
 		t.killChan = make(chan struct{})
 		// spin in a goroutine
@@ -270,11 +299,21 @@ func (t *task) Schedule() schedule.Schedule {
 	return t.schedule
 }
 
+//todo iza - here changes need to make spin immediately
 func (t *task) spin() {
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.spin",
+	}).Info("Debug Iza, task spinning in goroutine")
+
 	var consecutiveFailures int
 	for {
 		taskLogger.Debug("task spin loop")
 		// Start go routine to wait on schedule
+		log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.spin",
+		}).Info("Debug Iza, waiting for schedule as first in spin()")
 		go t.waitForSchedule()
 		// wait here on
 		//  schResponseChan - response from schedule
@@ -282,12 +321,45 @@ func (t *task) spin() {
 		select {
 		case sr := <-t.schResponseChan:
 			switch sr.State() {
-			// If response show this schedule is stil active we fire
+			// If response show this schedule is still active we fire
 			case schedule.Active:
+				log.WithFields(log.Fields{
+					"block": "scheduler/task.go",
+					"module": "task.spin",
+				}).Info("Debug Iza, schedule is still active")
+
+				//todo iza remove it
+				iza_debug_before := t.lastFireTime
+				log.WithFields(log.Fields{
+					"t.missedIntervals": t.missedIntervals,
+					"t.lastFireTime": t.lastFireTime,
+					"t.hitCount": t.HitCount(),
+				}).Info("Debug Iza, params before incrementing")
+
 				t.missedIntervals += sr.Missed()
 				t.lastFireTime = time.Now()
 				t.hitCount++
+
+				log.WithFields(log.Fields{
+					"t.missedIntervals": t.missedIntervals,
+					"t.lastFireTime": t.lastFireTime,
+					"t.hitCount": t.HitCount(),
+					"diff_last_time": time.Since(iza_debug_before).Nanoseconds(),
+				}).Info("Debug Iza, params after incrementing")
+
+
+				log.WithFields(log.Fields{
+					"block": "scheduler/task.go",
+					"module": "task.spin",
+				}).Info("Debug Iza, start firing a task")
+
 				t.fire()
+
+				log.WithFields(log.Fields{
+					"block": "scheduler/task.go",
+					"module": "task.spin",
+				}).Info("Debug Iza, end firing a task")
+
 				if t.lastFailureTime == t.lastFireTime {
 					consecutiveFailures++
 					taskLogger.WithFields(log.Fields{
@@ -350,15 +422,47 @@ func (t *task) spin() {
 }
 
 func (t *task) fire() {
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.fire",
+	}).Info("Debug Iza, firing a task")
 	t.Lock()
 	defer t.Unlock()
 
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.fire",
+	}).Info("Debug Iza, changing task state to firing")
+
 	t.state = core.TaskFiring
+
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.fire",
+	}).Info("Debug Iza, start workflow.Start")
+
 	t.workflow.Start(t)
+
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.fire",
+	}).Info("Debug Iza, end workflow.Start")
+
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.fire",
+	}).Info("Debug Iza, changing task state to spinning")
+
 	t.state = core.TaskSpinning
 }
 
+//todo iza - here schedule.Wait is executed
 func (t *task) waitForSchedule() {
+	log.WithFields(log.Fields{
+		"block": "scheduler/task.go",
+		"module": "task.waitForSchedule",
+		"t.LastFireTime": t.lastFireTime,
+	}).Info("Debug Iza, waiting for a schedule")
 	select {
 	case <-t.killChan:
 		return

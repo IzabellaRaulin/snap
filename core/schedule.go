@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/snap/pkg/schedule"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type Schedule struct {
@@ -34,9 +36,21 @@ type Schedule struct {
 	StopTimestamp  *time.Time `json:"stop_timestamp,omitempty"`
 }
 
+//todo iza - here there is a declaration of all scheduler types
 func makeSchedule(s Schedule) (schedule.Schedule, error) {
+	log.WithFields(log.Fields{
+		"block": "core/schedule.go",
+		"module": "SmakeSchedule",
+		"scheduler_type": s.Type,
+		"scheduler_interval": s.Interval,
+	}).Info("Debug Iza, creating an appriopriate scheduler")
+
 	switch s.Type {
 	case "simple":
+		log.WithFields(log.Fields{
+			"block": "core/schedule.go",
+			"module": "makeSchedule",
+		}).Info("Debug Iza, creating a simple scheduler")
 		if s.Interval == "" {
 			return nil, errors.New("missing `interval` in configuration of simple schedule")
 		}
@@ -53,6 +67,10 @@ func makeSchedule(s Schedule) (schedule.Schedule, error) {
 		}
 		return sch, nil
 	case "windowed":
+		log.WithFields(log.Fields{
+			"block": "core/schedule.go",
+			"module": "makeSchedule",
+		}).Info("Debug Iza, creating a windowed scheduler")
 		if s.StartTimestamp == nil || s.StopTimestamp == nil || s.Interval == "" {
 			errmsg := fmt.Sprintf("missing parameter/parameters in configuration of windowed schedule,"+
 				"start_timestamp: %s, stop_timestamp: %s, interval: %s",
@@ -77,6 +95,10 @@ func makeSchedule(s Schedule) (schedule.Schedule, error) {
 		}
 		return sch, nil
 	case "cron":
+		log.WithFields(log.Fields{
+			"block": "core/schedule.go",
+			"module": "makeSchedule",
+		}).Info("Debug Iza, creating a crone scheduler")
 		if s.Interval == "" {
 			return nil, errors.New("missing `interval` in configuration of cron schedule")
 		}

@@ -924,6 +924,11 @@ func (p *pluginControl) MetricExists(mns core.Namespace, ver int) bool {
 // of metrics and errors.  If an error is encountered no metrics will be
 // returned.
 func (p *pluginControl) CollectMetrics(id string, allTags map[string]map[string]string) (metrics []core.Metric, errs []error) {
+	log.WithFields(log.Fields{
+		"block": "control/control.go",
+		"module": "pluginControl.CollectMetrics",
+		"task_id": id,
+	}).Info("Debug Iza, do collect metrics")
 	// If control is not started we don't want tasks to be able to
 	// go through a workflow.
 	if !p.Started {

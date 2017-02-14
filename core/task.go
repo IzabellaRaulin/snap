@@ -209,6 +209,8 @@ func (tr *TaskCreationRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+//todo Iza - here there is a parsing opt from body content
+
 // Function used to create a task according to content (1st parameter)
 // . Content can be retrieved from a configuration file or a HTTP REST request body
 // . Mode is used to specify if the created task should start right away or not
@@ -219,6 +221,11 @@ func CreateTaskFromContent(body io.ReadCloser,
 		wfMap *wmap.WorkflowMap,
 		startOnCreate bool,
 		opts ...TaskOption) (Task, TaskErrors)) (Task, error) {
+
+		log.WithFields(log.Fields{
+		"block": "core/task.go",
+		"module": "CreateTaskFromContent",
+	}).Info("Debug Iza, creating a task from content, make a scheduler here")
 
 	tr, err := createTaskRequest(body)
 	if err != nil {

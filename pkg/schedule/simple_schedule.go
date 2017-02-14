@@ -2,14 +2,18 @@ package schedule
 
 import (
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
+//todo consider chanding interval to unexported, but it's used in waitOnInterval func
 // SimpleSchedule is a schedule that only implements an endless repeating interval
 type SimpleSchedule struct {
 	Interval time.Duration
 	state    ScheduleState
 }
 
+//todo iza - add next field count to all schedule types
 // NewSimpleSchedule returns the SimpleSchedule given the time interval
 func NewSimpleSchedule(i time.Duration) *SimpleSchedule {
 	return &SimpleSchedule{
@@ -22,6 +26,7 @@ func (s *SimpleSchedule) GetState() ScheduleState {
 	return s.state
 }
 
+//todo iza - validate additional field count too
 // Validate returns an error if the interval of schedule is less
 // or equals zero
 func (s *SimpleSchedule) Validate() error {
@@ -33,7 +38,19 @@ func (s *SimpleSchedule) Validate() error {
 
 // Wait returns the SimpleSchedule state, misses and the last schedule ran
 func (s *SimpleSchedule) Wait(last time.Time) Response {
+	log.WithFields(log.Fields{
+		"block": "pkg/schedule/simple_schedule.go",
+		"module": "SimpleSchedule.Wait",
+		"last_time": last,
+		"simpleSchedule.interval": s.Interval,
+	}).Info("Debug Iza, start simple schedule waiting")
 	m, t := waitOnInterval(last, s.Interval)
+	log.WithFields(log.Fields{
+		"block": "pkg/schedule/simple_schedule.go",
+		"module": "SimpleSchedule.Wait",
+		"last_time": last,
+		"simpleSchedule.interval": s.Interval,
+	}).Info("Debug Iza, end simple schedule waiting")
 	return &SimpleScheduleResponse{state: s.GetState(), missed: m, lastTime: t}
 }
 

@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/robfig/cron"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // ErrMissingCronEntry indicates missing cron entry
@@ -70,6 +72,14 @@ func (c *CronSchedule) Validate() error {
 
 // Wait waits as long as specified in cron entry
 func (c *CronSchedule) Wait(last time.Time) Response {
+	log.WithFields(log.Fields{
+		"block": "pkg/schedule/cron_schedule.go",
+		"module": "CronSchedule.Wait",
+		"last_time": last,
+		"CronSchedule.enabled": c.enabled,
+		"CronSchedule.entry": c.entry,
+	}).Info("Debug Iza, start crone schedule waiting")
+
 	var err error
 	now := time.Now()
 

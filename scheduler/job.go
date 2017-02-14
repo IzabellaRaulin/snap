@@ -221,6 +221,11 @@ func (c *collectorJob) Metrics() []core.Metric {
 
 func (c *collectorJob) Run() {
 	log.WithFields(log.Fields{
+		"block": "scheduler/job.go",
+		"module": "collectorJob.Run()",
+	}).Info("Debug Iza, run collection job")
+
+	log.WithFields(log.Fields{
 		"_module":      "scheduler-job",
 		"block":        "run",
 		"job-type":     "collector",
@@ -287,6 +292,11 @@ func newProcessJob(parentJob job, pluginName string, pluginVersion int, contentT
 
 func (p *processJob) Run() {
 	log.WithFields(log.Fields{
+		"block": "scheduler/job.go",
+		"module": "processJob.Run()",
+	}).Info("Debug Iza, run process job")
+
+	log.WithFields(log.Fields{
 		"_module":        "scheduler-job",
 		"block":          "run",
 		"job-type":       "processor",
@@ -334,6 +344,12 @@ func newPublishJob(parentJob job, pluginName string, pluginVersion int, contentT
 }
 
 func (p *publisherJob) Run() {
+	log.WithFields(log.Fields{
+		"block": "scheduler/job.go",
+		"module": "publisherJob.Run()",
+	}).Info("Debug Iza, run publish job")
+
+
 	log.WithFields(log.Fields{
 		"_module":        "scheduler-job",
 		"block":          "run",

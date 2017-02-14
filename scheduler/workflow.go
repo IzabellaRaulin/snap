@@ -240,6 +240,11 @@ type wfContentTypes map[string]map[string][]string
 
 // Start starts a workflow
 func (s *schedulerWorkflow) Start(t *task) {
+	log.WithFields(log.Fields{
+		"block": "scheduler/workflow.go",
+		"module": "schedulerWorkflow.Start",
+	}).Info("Debug Iza, start workflow")
+
 	workflowLogger.WithFields(log.Fields{
 		"_block":    "workflow-start",
 		"task-id":   t.id,
@@ -282,6 +287,10 @@ func (s *schedulerWorkflow) StateString() string {
 // workJobs takes a slice of process and publish nodes and submits jobs for each for a task.
 // It then iterates down any process nodes to submit their child node jobs for the task
 func workJobs(prs []*processNode, pus []*publishNode, t *task, pj job) {
+	log.WithFields(log.Fields{
+		"block": "scheduler/workflow.go",
+		"module": "workJobs",
+	}).Info("Debug Iza, submit process and publish jobs")
 	// optimize for no jobs
 	if len(prs) == 0 && len(pus) == 0 {
 		return
@@ -323,6 +332,10 @@ func workJobs(prs []*processNode, pus []*publishNode, t *task, pj job) {
 }
 
 func submitProcessJob(pj job, t *task, wg *sync.WaitGroup, pr *processNode) {
+	log.WithFields(log.Fields{
+		"block": "scheduler/workflow.go",
+		"module": "submitProcessJob",
+	}).Info("Debug Iza, submitting process job")
 	// Decrement the waitgroup
 	defer wg.Done()
 	// Create a new process job
@@ -378,6 +391,10 @@ func submitProcessJob(pj job, t *task, wg *sync.WaitGroup, pr *processNode) {
 }
 
 func submitPublishJob(pj job, t *task, wg *sync.WaitGroup, pu *publishNode) {
+	log.WithFields(log.Fields{
+		"block": "scheduler/workflow.go",
+		"module": "submitPublishJob",
+	}).Info("Debug Iza, submitting publish job")
 	// Decrement the waitgroup
 	defer wg.Done()
 	// Create a new process job

@@ -277,14 +277,28 @@ func (s *scheduler) RegisterEventHandler(name string, h gomit.Handler) error {
 
 // CreateTask creates and returns task
 func (s *scheduler) CreateTask(sch schedule.Schedule, wfMap *wmap.WorkflowMap, startOnCreate bool, opts ...core.TaskOption) (core.Task, core.TaskErrors) {
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": " CreateTask",
+	}).Info("Debug Iza, creating a task")
 	return s.createTask(sch, wfMap, startOnCreate, "user", opts...)
 }
 
 func (s *scheduler) CreateTaskTribe(sch schedule.Schedule, wfMap *wmap.WorkflowMap, startOnCreate bool, opts ...core.TaskOption) (core.Task, core.TaskErrors) {
+		log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": "CreateTaskTribe",
+	}).Info("Debug Iza, creating a task for tribe")
 	return s.createTask(sch, wfMap, startOnCreate, "tribe", opts...)
 }
 
 func (s *scheduler) createTask(sch schedule.Schedule, wfMap *wmap.WorkflowMap, startOnCreate bool, source string, opts ...core.TaskOption) (core.Task, core.TaskErrors) {
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": "createTask",
+		"start_on_create": startOnCreate,
+	}).Info("Debug Iza, start creating a task in scheduler")
+
 	logger := schedulerLogger.WithFields(log.Fields{
 		"_block":          "create-task",
 		"source":          source,
@@ -378,7 +392,10 @@ func (s *scheduler) createTask(sch schedule.Schedule, wfMap *wmap.WorkflowMap, s
 			te.errs = append(te.errs, errs...)
 		}
 	}
-
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": " createTask",
+	}).Info("Debug Iza, end creating a task in scheduler")
 	return task, te
 }
 
@@ -438,20 +455,45 @@ func (s *scheduler) GetTask(id string) (core.Task, error) {
 
 // StartTask provided a task id a task is started
 func (s *scheduler) StartTask(id string) []serror.SnapError {
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": "scheduler.StartTask",
+		"task_id": id,
+	}).Info("Debug Iza, staring a task as a user")
 	return s.startTask(id, "user")
 }
 
 func (s *scheduler) StartTaskTribe(id string) []serror.SnapError {
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": "scheduler.StartTaskTribe",
+		"task_id": id,
+	}).Info("Debug Iza, staring a task as a tribe")
 	return s.startTask(id, "tribe")
 }
 
 func (s *scheduler) startTask(id, source string) []serror.SnapError {
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": "scheduler.startTask",
+		"task_id": id,
+		"source": source,
+	}).Info("Debug Iza, staring a task 2")
+
 	logger := schedulerLogger.WithFields(log.Fields{
 		"_block": "start-task",
 		"source": source,
 	})
 
 	t, err := s.getTask(id)
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": "scheduler.StartTask",
+		"task_id": id,
+		"task_status_raw": t.State(),
+		"task_status": core.TaskStateLookup[t.State()],
+	}).Info("Debug Iza, getting task state")
+
 	if err != nil {
 		schedulerLogger.WithFields(log.Fields{
 			"_block":  "start-task",
@@ -517,7 +559,23 @@ func (s *scheduler) startTask(id, source string) []serror.SnapError {
 		Source: source,
 	}
 	defer s.eventManager.Emit(event)
+
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": "scheduler.startTask",
+		"task_id": id,
+		"source": source,
+	}).Info("Debug Iza, start task spinning")
+
 	t.Spin()
+
+	log.WithFields(log.Fields{
+		"block": "scheduler/scheduler.go",
+		"module": "scheduler.startTask",
+		"task_id": id,
+		"source": source,
+	}).Info("Debug Iza, end task spinning")
+
 	logger.WithFields(log.Fields{
 		"task-id":    t.ID(),
 		"task-state": t.State(),

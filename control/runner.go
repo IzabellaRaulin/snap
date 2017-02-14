@@ -111,6 +111,10 @@ func (r *runner) AddDelegates(delegates ...gomit.Delegator) {
 
 // Begin handing events and managing available plugins
 func (r *runner) Start() error {
+	log.WithFields(log.Fields{
+		"block": "control/runner.go",
+		"module": "runner.Start",
+	}).Info("Debug Iza, starting a runner")
 	// Delegates must be added before starting if none exist
 	// then this Runner can do nothing and should not start.
 	if len(r.delegates) == 0 {
@@ -137,6 +141,11 @@ func (r *runner) Start() error {
 func (r *runner) Stop() []error {
 	var errs []error
 
+	log.WithFields(log.Fields{
+		"block": "control/runner.go",
+		"module": "runner.Stop",
+	}).Info("Debug Iza, stop all plugin")
+
 	// Stop the monitor
 	r.monitor.Stop()
 
@@ -156,6 +165,11 @@ func (r *runner) Stop() []error {
 }
 
 func (r *runner) startPlugin(p executablePlugin) (*availablePlugin, error) {
+	log.WithFields(log.Fields{
+		"block": "control/runner.go",
+		"module": "runner.startPlugin",
+	}).Info("Debug Iza, start plugin")
+
 	resp, err := p.Run(time.Second * 5)
 	if err != nil {
 		e := errors.New("error starting plugin: " + err.Error())
@@ -209,6 +223,12 @@ func (r *runner) startPlugin(p executablePlugin) (*availablePlugin, error) {
 }
 
 func (r *runner) stopPlugin(reason string, ap *availablePlugin) error {
+	log.WithFields(log.Fields{
+		"block": "control/runner.go",
+		"module": "runner.stopPlugin",
+		"reason": reason,
+	}).Info("Debug Iza, stop the plugin with reason")
+
 	pool, err := r.availablePlugins.getPool(ap.key)
 	if err != nil {
 		return err

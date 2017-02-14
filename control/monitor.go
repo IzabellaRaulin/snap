@@ -19,7 +19,11 @@ limitations under the License.
 
 package control
 
-import "time"
+import (
+	"time"
+
+	log "github.com/Sirupsen/logrus"
+)
 
 const (
 	// MonitorStopped - enum representation of monitor stopped state
@@ -75,6 +79,11 @@ func newMonitor(opts ...monitorOption) *monitor {
 
 // Start starts the monitor
 func (m *monitor) Start(availablePlugins *availablePlugins) {
+	log.WithFields(log.Fields{
+		"block": "control/monitor.go",
+		"module": "monitor.Start",
+		"ticker": m.duration,
+	}).Info("Debug Iza, starting a monitor")
 	//start a routine that will be fired every X duration looping
 	//over available plugins and firing a health check routine
 	ticker := time.NewTicker(m.duration)

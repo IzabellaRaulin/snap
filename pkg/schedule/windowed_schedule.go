@@ -55,6 +55,14 @@ func (w *WindowedSchedule) Validate() error {
 // Wait waits the window interval and return.
 // Otherwise, it exits with a completed state
 func (w *WindowedSchedule) Wait(last time.Time) Response {
+	log.WithFields(log.Fields{
+		"block": "pkg/schedule/windowed_schedule.go",
+		"module": "WindowedSchedule.Wait",
+		"last_time": last,
+		"WindowedSchedule.interval": w.Interval,
+		"WindowedSchedule.startTime": w.StartTime,
+		"WindowedSchedule.stopTime": w.StopTime,
+	}).Info("Debug Iza, start windowed schedule waiting")
 	// Do we even have a specific start time?
 	if w.StartTime != nil {
 		// Wait till it is time to start if before the window start
