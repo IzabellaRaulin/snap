@@ -65,6 +65,7 @@ type TaskWatcherHandler interface {
 	CatchCollection([]Metric)
 	CatchTaskStarted()
 	CatchTaskStopped()
+	CatchTaskEnded()
 	CatchTaskDisabled(string)
 }
 

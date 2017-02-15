@@ -120,6 +120,7 @@ func newTask(s schedule.Schedule, wf *schedulerWorkflow, m *workManager, mm mana
 	for _, opt := range opts {
 		opt(task)
 	}
+
 	return task, nil
 }
 
@@ -228,7 +229,7 @@ func (t *task) Spin() {
 	// misses for the interval while stopped.
 	t.lastFireTime = time.Time{}
 
-	if t.state == core.TaskStopped {
+	if t.state == core.TaskStopped || t.state == core.TaskEnded {
 		t.state = core.TaskSpinning
 		t.killChan = make(chan struct{})
 		// spin in a goroutine
@@ -433,7 +434,7 @@ func (t *taskCollection) remove(task *task) error {
 	t.Lock()
 	defer t.Unlock()
 	if _, ok := t.table[task.id]; ok {
-		if task.state != core.TaskStopped && task.state != core.TaskDisabled {
+		if task.state != core.TaskStopped && task.state != core.TaskDisabled && task.state != core.TaskEnded {
 			taskLogger.WithFields(log.Fields{
 				"_block":  "remove",
 				"task id": task.id,

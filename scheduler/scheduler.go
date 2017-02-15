@@ -64,6 +64,8 @@ var (
 	ErrTaskDisabledNotRunnable = errors.New("Task is disabled. Cannot be started.")
 	// ErrTaskDisabledNotStoppable - The error message for when a task is disabled and cannot be stopped
 	ErrTaskDisabledNotStoppable = errors.New("Task is disabled. Only running tasks can be stopped.")
+	// ErrTaskEndedNotStoppable - The error message for when a task is ended and cannot be stopped
+	ErrTaskEndedNotStoppable = errors.New("Task is ended. Only running tasks can be stopped.")
 )
 
 type schedulerState int
@@ -481,6 +483,18 @@ func (s *scheduler) startTask(id, source string) []serror.SnapError {
 		}
 	}
 
+	//Ensure the schedule is valid at this point and time.
+	//In particular case of restarting a task with windowed scheduler,
+	//the scheduler might be invalid because of stop time in in the past
+	if err := t.schedule.Validate(); err != nil {
+		logger.WithFields(log.Fields{
+			"task-id":    t.ID(),
+			"task-state": t.State(),
+		}).Info("Not valid task schedule")
+		return []serror.SnapError{
+			serror.New(err),
+		}
+	}
 	// Group dependencies by the node they live on
 	// and subscribe to them.
 	depGroups := getWorkflowPlugins(t.workflow.processNodes, t.workflow.publishNodes, t.workflow.metrics)
@@ -558,6 +572,14 @@ func (s *scheduler) stopTask(id, source string) []serror.SnapError {
 		}).Error("task is already stopped")
 		return []serror.SnapError{
 			serror.New(ErrTaskAlreadyStopped),
+		}
+	case core.TaskEnded:
+		logger.WithFields(log.Fields{
+			"task-id":    t.ID(),
+			"task-state": t.State(),
+		}).Error("task is already ended")
+		return []serror.SnapError{
+			serror.New(ErrTaskEndedNotStoppable),
 		}
 	case core.TaskDisabled:
 		logger.WithFields(log.Fields{
@@ -768,6 +790,14 @@ func (s *scheduler) HandleGomitEvent(e gomit.Event) {
 			"task-id":         v.TaskID,
 		}).Debug("event received")
 		s.taskWatcherColl.handleTaskStopped(v.TaskID)
+	case *scheduler_event.TaskEndedEvent:
+		log.WithFields(log.Fields{
+			"_module":         "scheduler-events",
+			"_block":          "handle-events",
+			"event-namespace": e.Namespace(),
+			"task-id":         v.TaskID,
+		}).Debug("event received")
+		s.taskWatcherColl.handleTaskEnded(v.TaskID)
 	case *scheduler_event.TaskDisabledEvent:
 		log.WithFields(log.Fields{
 			"_module":         "scheduler-events",
