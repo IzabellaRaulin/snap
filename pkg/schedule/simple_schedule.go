@@ -7,13 +7,15 @@ import (
 // SimpleSchedule is a schedule that only implements an endless repeating interval
 type SimpleSchedule struct {
 	Interval time.Duration
+	Count    int
 	state    ScheduleState
 }
 
-// NewSimpleSchedule returns the SimpleSchedule given the time interval
-func NewSimpleSchedule(i time.Duration) *SimpleSchedule {
+// NewSimpleSchedule returns the SimpleSchedule given the time interval and count of execution repeat
+func NewSimpleSchedule(i time.Duration, cnt int) *SimpleSchedule {
 	return &SimpleSchedule{
 		Interval: i,
+		Count: cnt,
 	}
 }
 
