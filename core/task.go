@@ -42,18 +42,18 @@ const (
 	TaskStopped
 	TaskSpinning
 	TaskFiring
-	TaskEnded
+	TaskCompleted
 	TaskStopping
 )
 
 var (
 	TaskStateLookup = map[TaskState]string{
-		TaskDisabled: "Disabled", // on error, not resumable
-		TaskStopped:  "Stopped",  // stopped but resumable
-		TaskSpinning: "Running",  // running
-		TaskFiring:   "Running",  // running (firing can happen so briefly we don't want to try and render it as a string state)
-		TaskEnded:    "Ended",    // ended, not resumable because the schedule will not fire again
-		TaskStopping: "Stopping", // channel has been closed, wait for TaskStopped state
+		TaskDisabled:  "Disabled",  // on error, not resumable
+		TaskStopped:   "Stopped",   // stopped but resumable
+		TaskSpinning:  "Running",   // running
+		TaskFiring:    "Running",   // running (firing can happen so briefly we don't want to try and render it as a string state)
+		TaskCompleted: "Completed", // completed but resumable (if schedule is still valid, task could be fired again)
+		TaskStopping:  "Stopping",  // channel has been closed, wait for TaskStopped state
 	}
 )
 
@@ -65,7 +65,7 @@ type TaskWatcherHandler interface {
 	CatchCollection([]Metric)
 	CatchTaskStarted()
 	CatchTaskStopped()
-	CatchTaskEnded()
+	CatchTaskCompleted()
 	CatchTaskDisabled(string)
 }
 

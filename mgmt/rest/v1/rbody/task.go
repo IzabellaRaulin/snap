@@ -35,18 +35,18 @@ const (
 	AddScheduledTaskType           = "scheduled_task_created"
 	ScheduledTaskType              = "scheduled_task"
 	ScheduledTaskStartedType       = "scheduled_task_started"
-	ScheduledTaskStoppedType       = "scheduled_task_ended"
+	ScheduledTaskStoppedType       = "scheduled_task_stopped"
 	ScheduledTaskRemovedType       = "scheduled_task_removed"
 	ScheduledTaskWatchingEndedType = "schedule_task_watch_ended"
 	ScheduledTaskEnabledType       = "scheduled_task_enabled"
 
 	// Event types for task watcher streaming
-	TaskWatchStreamOpen   = "stream-open"
-	TaskWatchMetricEvent  = "metric-event"
-	TaskWatchTaskDisabled = "task-disabled"
-	TaskWatchTaskStarted  = "task-started"
-	TaskWatchTaskStopped  = "task-stopped"
-	TaskWatchTaskEnded    = "task-ended"
+	TaskWatchStreamOpen    = "stream-open"
+	TaskWatchMetricEvent   = "metric-event"
+	TaskWatchTaskDisabled  = "task-disabled"
+	TaskWatchTaskStarted   = "task-started"
+	TaskWatchTaskStopped   = "task-stopped"
+	TaskWatchTaskCompleted = "task-completed"
 )
 
 type ScheduledTaskListReturned struct {

@@ -64,8 +64,8 @@ var (
 	ErrTaskDisabledNotRunnable = errors.New("Task is disabled. Cannot be started.")
 	// ErrTaskDisabledNotStoppable - The error message for when a task is disabled and cannot be stopped
 	ErrTaskDisabledNotStoppable = errors.New("Task is disabled. Only running tasks can be stopped.")
-	// ErrTaskEndedNotStoppable - The error message for when a task is ended and cannot be stopped
-	ErrTaskEndedNotStoppable = errors.New("Task is ended. Only running tasks can be stopped.")
+	// ErrTaskCompletedNotStoppable - The error message for when a task is completed and cannot be stopped
+	ErrTaskCompletedNotStoppable = errors.New("Task is completed. Only running tasks can be stopped.")
 )
 
 type schedulerState int
@@ -573,13 +573,13 @@ func (s *scheduler) stopTask(id, source string) []serror.SnapError {
 		return []serror.SnapError{
 			serror.New(ErrTaskAlreadyStopped),
 		}
-	case core.TaskEnded:
+	case core.TaskCompleted:
 		logger.WithFields(log.Fields{
 			"task-id":    t.ID(),
 			"task-state": t.State(),
-		}).Error("task is already ended")
+		}).Error("task is already completed")
 		return []serror.SnapError{
-			serror.New(ErrTaskEndedNotStoppable),
+			serror.New(ErrTaskCompletedNotStoppable),
 		}
 	case core.TaskDisabled:
 		logger.WithFields(log.Fields{
@@ -790,14 +790,14 @@ func (s *scheduler) HandleGomitEvent(e gomit.Event) {
 			"task-id":         v.TaskID,
 		}).Debug("event received")
 		s.taskWatcherColl.handleTaskStopped(v.TaskID)
-	case *scheduler_event.TaskEndedEvent:
+	case *scheduler_event.TaskCompletedEvent:
 		log.WithFields(log.Fields{
 			"_module":         "scheduler-events",
 			"_block":          "handle-events",
 			"event-namespace": e.Namespace(),
 			"task-id":         v.TaskID,
 		}).Debug("event received")
-		s.taskWatcherColl.handleTaskEnded(v.TaskID)
+		s.taskWatcherColl.handleTaskCompleted(v.TaskID)
 	case *scheduler_event.TaskDisabledEvent:
 		log.WithFields(log.Fields{
 			"_module":         "scheduler-events",

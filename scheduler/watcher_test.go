@@ -53,7 +53,7 @@ func (d *mockCatcher) CatchTaskStopped() {
 	sum++
 }
 
-func (d *mockCatcher) CatchTaskEnded() {
+func (d *mockCatcher) CatchTaskCompleted() {
 	d.count++
 	sum++
 }

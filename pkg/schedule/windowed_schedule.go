@@ -91,7 +91,7 @@ func (w *WindowedSchedule) Wait(last time.Time) Response {
 			}).Debug("waiting for interval")
 			m, _ = waitOnInterval(last, w.Interval)
 		} else {
-			w.state = Ended
+			w.state = Completed
 			m = 0
 		}
 	} else {

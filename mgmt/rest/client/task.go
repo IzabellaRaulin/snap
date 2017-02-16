@@ -153,12 +153,12 @@ func (c *Client) WatchTask(id string) *WatchTasksResult {
 					r.Close()
 					return
 				}
-			//todo iza - ask about if for ended/completed task 'r' should be closed or not
+				//todo iza - ask about if for ended/completed task 'r' should be closed or not
 				switch ste.EventType {
 				case rbody.TaskWatchTaskDisabled:
 					r.EventChan <- ste
 					r.Close()
-				case rbody.TaskWatchTaskStopped, rbody.TaskWatchTaskEnded, rbody.TaskWatchTaskStarted, rbody.TaskWatchMetricEvent:
+				case rbody.TaskWatchTaskStopped, rbody.TaskWatchTaskCompleted, rbody.TaskWatchTaskStarted, rbody.TaskWatchMetricEvent:
 					r.EventChan <- ste
 				}
 			}

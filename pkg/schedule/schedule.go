@@ -20,8 +20,8 @@ type ScheduleState int
 const (
 	// Active - set by the scheduler once a schedule has been validated and is in use in a task
 	Active ScheduleState = iota
-	// Ended - Schedule is ended
-	Ended
+	// Completed - Schedule is completed
+	Completed
 	// Error - Schedule is halted with an error
 	Error
 )
