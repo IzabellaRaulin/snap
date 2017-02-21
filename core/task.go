@@ -90,6 +90,10 @@ type Task interface {
 	SetTaskID(id string)
 	SetStopOnFailure(int)
 	GetStopOnFailure() int
+	//todo iza
+	SetCompleteOnCount(uint)
+	GetCompleteOnCount() uint
+
 	Option(...TaskOption) TaskOption
 	WMap() *wmap.WorkflowMap
 	Schedule() schedule.Schedule
@@ -134,6 +138,21 @@ func OptionStopOnFailure(v int) TaskOption {
 	}
 }
 
+func OptionCompleteOnCount(v uint) TaskOption {
+	return func(t Task) TaskOption {
+		previous := t.GetCompleteOnCount()
+		t.SetCompleteOnCount(v)
+		log.WithFields(log.Fields{
+			"_module":                   "core",
+			"_block":                    "OptionStopOnFailure",
+			"task-id":                   t.ID(),
+			"task-name":                 t.GetName(),
+			"consecutive failure limit": t.GetStopOnFailure(),
+		}).Debug("Setting stop-on-failure limit for task")
+		return OptionCompleteOnCount(previous)
+	}
+}
+
 // SetTaskName sets the name of the task.
 // This is optional.
 // If task name is not set, the task name is then defaulted to "Task-<task-id>"
@@ -165,6 +184,7 @@ type TaskCreationRequest struct {
 	Schedule    *Schedule         `json:"schedule"`
 	Start       bool              `json:"start"`
 	MaxFailures int               `json:"max-failures"`
+	MaxCounts uint               `json:"max-counts, omitempty"`
 }
 
 func (tr *TaskCreationRequest) UnmarshalJSON(data []byte) error {
@@ -197,6 +217,11 @@ func (tr *TaskCreationRequest) UnmarshalJSON(data []byte) error {
 		case "max-failures":
 			if err := json.Unmarshal(v, &(tr.MaxFailures)); err != nil {
 				return fmt.Errorf("%v (while parsing 'max-failures')", err)
+			}
+		case "max-counts":
+			//todo iza
+			if err := json.Unmarshal(v, &(tr.MaxCounts)); err != nil {
+				return fmt.Errorf("%v (while parsing 'max-counts')", err)
 			}
 		case "version":
 			if err := json.Unmarshal(v, &(tr.Version)); err != nil {
@@ -251,6 +276,12 @@ func CreateTaskFromContent(body io.ReadCloser,
 	if tr.MaxFailures != 0 {
 		// then set the appropriate value in the opts
 		opts = append(opts, OptionStopOnFailure(tr.MaxFailures))
+	}
+
+	// if a MaxFailures value is included as part of the task creation request
+	if tr.MaxCounts != 0 {
+		// then set the appropriate value in the opts
+		opts = append(opts, OptionCompleteOnCount(tr.MaxCounts))
 	}
 
 	if mode == nil {

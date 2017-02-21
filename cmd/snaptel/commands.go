@@ -50,6 +50,7 @@ var (
 						flTaskSchedNoStart,
 						flTaskDeadline,
 						flTaskMaxFailures,
+						flTaskMaxCounts,
 					},
 				},
 				{
