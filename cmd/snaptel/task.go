@@ -115,6 +115,21 @@ func stringValToInt(val string) (int, error) {
 	return parsedField, nil
 }
 
+func stringValToUint(val string) (uint, error) {
+	// parse the input (string) as an unsigned integer value (and return that uint value
+	// to the caller or an error if the input value cannot be parsed as an uint)
+
+	valInt, err := stringValToInt(val)
+
+	if err != nil {
+		return uint(0), err
+	}
+	if valInt < 0 {
+		return uint(0), fmt.Errorf("Value '%v' is a negative number and cannot be parsed as an unsigned integer", val)
+	}
+	// return the unsigned integer equivalent of the input string and a nil error (indicating success)
+	return uint(valInt), err
+}
 // Parses the command-line parameters (if any) and uses them to override the underlying
 // schedule for this task or to set a schedule for that task (if one is not already defined,
 // as is the case when we're building a new task from a workflow manifest).
@@ -227,6 +242,27 @@ func (t *task) setScheduleFromCliOptions(ctx *cli.Context) error {
 		}
 		duration = &d
 	}
+
+	// set the MaxFailures for the task (if a 'max-failures' value was provided in the CLI options)
+	maxFailuresStrVal := ctx.String("max-failures")
+	if ctx.IsSet("max-failures") || maxFailuresStrVal != "" {
+		maxFailures, err := stringValToInt(maxFailuresStrVal)
+		if err != nil {
+			return err
+		}
+		t.MaxFailures = maxFailures
+	}
+
+	// set the count for the schedule (if a 'count' value was provided)
+	countStrVal := ctx.String("count")
+	if ctx.IsSet("count") || countStrVal != "" {
+		count, err := stringValToUint(countStrVal)
+		if err != nil {
+			return err
+		}
+		t.Schedule.Count = count
+	}
+
 	// Grab the interval for the schedule (if one was provided). Note that if an
 	// interval value was not passed in and there is no interval defined for the
 	// schedule associated with this task, it's an error

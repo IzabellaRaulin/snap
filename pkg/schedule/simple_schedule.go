@@ -2,24 +2,32 @@ package schedule
 
 import (
 	"time"
+	log "github.com/Sirupsen/logrus"
 )
 
 // SimpleSchedule is a schedule that only implements an endless repeating interval
 type SimpleSchedule struct {
 	Interval time.Duration
+	Count 	 uint
 	state    ScheduleState
 }
 
 // NewSimpleSchedule returns the SimpleSchedule given the time interval
-func NewSimpleSchedule(i time.Duration) *SimpleSchedule {
+func NewSimpleSchedule(i time.Duration, cnt uint) *SimpleSchedule {
 	return &SimpleSchedule{
 		Interval: i,
+		Count: cnt,
 	}
 }
 
 // GetState returns the schedule state
 func (s *SimpleSchedule) GetState() ScheduleState {
 	return s.state
+}
+
+// GetCount returns the schedule count
+func (s *SimpleSchedule) GetCount() uint {
+	return s.Count
 }
 
 // Validate returns an error if the interval of schedule is less
@@ -34,6 +42,10 @@ func (s *SimpleSchedule) Validate() error {
 // Wait returns the SimpleSchedule state, misses and the last schedule ran
 func (s *SimpleSchedule) Wait(last time.Time) Response {
 	m, t := waitOnInterval(last, s.Interval)
+	log.WithFields(log.Fields{
+		"module":"pkg/schedule/simple_schedule.go",
+		"block": "simpleSchedule.Wait",
+	}).Info("Debug, Iza - after waitOnInterval")
 	return &SimpleScheduleResponse{state: s.GetState(), missed: m, lastTime: t}
 }
 

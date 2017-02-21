@@ -287,12 +287,13 @@ func (t *task) spin() {
 		select {
 		case sr := <-t.schResponseChan:
 			switch sr.State() {
-			// If response show this schedule is stil active we fire
+			// If response show this schedule is still active we fire
 			case schedule.Active:
 				t.missedIntervals += sr.Missed()
 				t.lastFireTime = time.Now()
 				t.hitCount++
 				t.fire()
+
 				if t.lastFailureTime == t.lastFireTime {
 					consecutiveFailures++
 					taskLogger.WithFields(log.Fields{
@@ -306,6 +307,7 @@ func (t *task) spin() {
 				} else {
 					consecutiveFailures = 0
 				}
+
 				if t.stopOnFailure >= 0 && consecutiveFailures >= t.stopOnFailure {
 					taskLogger.WithFields(log.Fields{
 						"_block":               "spin",
@@ -322,6 +324,27 @@ func (t *task) spin() {
 					event := new(scheduler_event.TaskDisabledEvent)
 					event.TaskID = t.id
 					event.Why = fmt.Sprintf("Task disabled with error: %s", t.lastFailureMessage)
+					defer t.eventEmitter.Emit(event)
+					return
+				}
+				//todo iza
+
+				if t.schedule.GetCount() > 0 && t.HitCount() >= t.schedule.GetCount() {
+						taskLogger.WithFields(log.Fields{
+						"_block":               "spin",
+						"task-id":              t.id,
+						"task-name":            t.name,
+						"hit-counts": 		t.HitCount(),
+						"scheduled-counts":     t.schedule.GetCount(),
+					}).Info("Debug Iza - task completed")
+					t.Lock()
+					//todo iza - add a new state
+					t.state = core.TaskEnded
+					t.Unlock()
+					//todo iza
+					// Send task completed event
+					event := new(scheduler_event.TaskStoppedEvent)
+					event.TaskID = t.id
 					defer t.eventEmitter.Emit(event)
 					return
 				}

@@ -34,6 +34,7 @@ type CronSchedule struct {
 	enabled  bool
 	state    ScheduleState
 	schedule *cron.Cron
+	Count uint
 }
 
 // NewCronSchedule creates and starts new cron schedule and returns an instance of CronSchedule
@@ -43,6 +44,7 @@ func NewCronSchedule(entry string) *CronSchedule {
 		entry:    entry,
 		schedule: schedule,
 		enabled:  false,
+		Count: uint(0),
 	}
 }
 
@@ -54,6 +56,12 @@ func (c *CronSchedule) Entry() string {
 // GetState returns state of CronSchedule
 func (c *CronSchedule) GetState() ScheduleState {
 	return c.state
+}
+
+
+// GetState returns state of CronSchedule
+func (c *CronSchedule) GetCount() uint {
+	return c.Count
 }
 
 // Validate returns error if cron entry doesn't match crontab format

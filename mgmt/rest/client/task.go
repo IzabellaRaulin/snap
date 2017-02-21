@@ -38,6 +38,8 @@ type Schedule struct {
 	Type string `json:"type,omitempty"`
 	// Interval specifies the time duration.
 	Interval string `json:"interval,omitempty"`
+	// Count specifies the count of iteration.
+	Count uint `json:"count,omitempty"`
 	// StartTimestamp specifies the beginning time.
 	StartTimestamp *time.Time `json:"start_timestamp,omitempty"`
 	// StopTimestamp specifies the end time.
@@ -53,6 +55,7 @@ func (c *Client) CreateTask(s *Schedule, wf *wmap.WorkflowMap, name string, dead
 		Schedule: &core.Schedule{
 			Type:           s.Type,
 			Interval:       s.Interval,
+			Count: 		s.Count,
 			StartTimestamp: s.StartTimestamp,
 			StopTimestamp:  s.StopTimestamp,
 		},

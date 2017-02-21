@@ -16,6 +16,7 @@ type WindowedSchedule struct {
 	StartTime *time.Time
 	StopTime  *time.Time
 	state     ScheduleState
+	Count uint
 }
 
 // NewWindowedSchedule returns an instance of WindowedSchedule given duration,
@@ -25,12 +26,19 @@ func NewWindowedSchedule(i time.Duration, start *time.Time, stop *time.Time) *Wi
 		Interval:  i,
 		StartTime: start,
 		StopTime:  stop,
+		Count: uint(0),
 	}
+	//todo iza
 }
 
 // GetState returns ScheduleState of WindowedSchedule
 func (w *WindowedSchedule) GetState() ScheduleState {
 	return w.state
+}
+
+// GetCount returns the schedule count
+func (s *WindowedSchedule) GetCount() uint {
+	return s.Count
 }
 
 // Validate validates the start, stop and duration interval of

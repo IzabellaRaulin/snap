@@ -102,6 +102,12 @@ var (
 		Usage: "Interval for the task schedule [ex (simple schedule): 250ms, 1s, 30m (cron schedule): \"0 * * * * *\"]",
 	}
 
+	//todo iza
+	flTaskSchedCount = cli.StringFlag{
+		Name:  "count, c",
+		Usage: "Count for the task schedule [defaults to 0]",
+	}
+
 	flTaskSchedStartTime = cli.StringFlag{
 		Name:  "start-time",
 		Usage: "Start time for the task schedule [defaults to now]",

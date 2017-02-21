@@ -34,6 +34,10 @@ type Schedule interface {
 	Validate() error
 	// Blocks until time to fire and returns a schedule.Response
 	Wait(time.Time) Response
+	//todo iza
+	// Returns the count of the schedule
+	GetCount() uint
+
 }
 
 // Response interface defines the behavior of schedule response
