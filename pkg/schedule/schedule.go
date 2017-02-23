@@ -34,8 +34,6 @@ type Schedule interface {
 	Validate() error
 	// Blocks until time to fire and returns a schedule.Response
 	Wait(time.Time) Response
-
-
 }
 
 // Response interface defines the behavior of schedule response

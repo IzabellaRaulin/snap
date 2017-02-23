@@ -102,7 +102,6 @@ var (
 		Usage: "Interval for the task schedule [ex (simple schedule): 250ms, 1s, 30m (cron schedule): \"0 * * * * *\"]",
 	}
 
-
 	flTaskSchedStartTime = cli.StringFlag{
 		Name:  "start-time",
 		Usage: "Start time for the task schedule [defaults to now]",
@@ -136,10 +135,10 @@ var (
 		Name:  "max-failures",
 		Usage: "The number of consecutive failures before Snap disables the task",
 	}
-	//todo iza
-	flTaskMaxCounts = cli.StringFlag{
-		Name:  "max-counts, c",
-		Usage: "Count for the task schedule [defaults to 0]",
+
+	flTaskRunCounts = cli.StringFlag{
+		Name:  "run-counts, r",
+		Usage: "The counts of scheduled runs before Snap completes the task [defaults to 0 which means no limits; set 1 determines single run task]",
 	}
 
 	// metric

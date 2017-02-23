@@ -219,6 +219,7 @@ func (t *task) SetCompleteOnCount(v uint) {
 func (t *task) GetCompleteOnCount() uint {
 	return t.completeOnCount
 }
+
 // Spin will start a task spinning in its own routine while it waits for its
 // schedule.
 func (t *task) Spin() {
@@ -236,7 +237,7 @@ func (t *task) Spin() {
 	// misses for the interval while stopped.
 	t.lastFireTime = time.Time{}
 
-	if t.state == core.TaskStopped {
+	if t.state == core.TaskStopped || t.state == core.TaskEnded {
 		t.state = core.TaskSpinning
 		t.killChan = make(chan struct{})
 		// spin in a goroutine
@@ -285,6 +286,8 @@ func (t *task) Schedule() schedule.Schedule {
 
 func (t *task) spin() {
 	var consecutiveFailures int
+	initialHitCount := t.HitCount()
+
 	for {
 		taskLogger.Debug("task spin loop")
 		// Start go routine to wait on schedule
@@ -335,21 +338,18 @@ func (t *task) spin() {
 					defer t.eventEmitter.Emit(event)
 					return
 				}
-				//todo iza
 
-				if t.completeOnCount > 0 && t.HitCount() >= t.completeOnCount {
+				if t.completeOnCount > 0 && (t.HitCount() - initialHitCount) >= t.completeOnCount {
 						taskLogger.WithFields(log.Fields{
 						"_block":               "spin",
 						"task-id":              t.id,
 						"task-name":            t.name,
 						"hit-counts": 		t.HitCount(),
-						"scheduled-counts":     t.GetCompleteOnCount(),
+						"run-counts":           t.GetCompleteOnCount(),
 					}).Info("Debug Iza - task completed")
 					t.Lock()
-					//todo iza - add a new state
 					t.state = core.TaskEnded
 					t.Unlock()
-					//todo iza
 					// Send task completed event
 					event := new(scheduler_event.TaskStoppedEvent)
 					event.TaskID = t.id
@@ -464,7 +464,7 @@ func (t *taskCollection) remove(task *task) error {
 	t.Lock()
 	defer t.Unlock()
 	if _, ok := t.table[task.id]; ok {
-		if task.state != core.TaskStopped && task.state != core.TaskDisabled {
+		if task.state != core.TaskStopped && task.state != core.TaskDisabled && task.state != core.TaskEnded {
 			taskLogger.WithFields(log.Fields{
 				"_block":  "remove",
 				"task id": task.id,

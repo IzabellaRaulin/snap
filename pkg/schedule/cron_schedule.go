@@ -56,7 +56,6 @@ func (c *CronSchedule) GetState() ScheduleState {
 	return c.state
 }
 
-
 // Validate returns error if cron entry doesn't match crontab format
 func (c *CronSchedule) Validate() error {
 	if c.entry == "" {

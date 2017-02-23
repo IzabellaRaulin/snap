@@ -90,7 +90,6 @@ type Task interface {
 	SetTaskID(id string)
 	SetStopOnFailure(int)
 	GetStopOnFailure() int
-	//todo iza
 	SetCompleteOnCount(uint)
 	GetCompleteOnCount() uint
 
@@ -144,11 +143,11 @@ func OptionCompleteOnCount(v uint) TaskOption {
 		t.SetCompleteOnCount(v)
 		log.WithFields(log.Fields{
 			"_module":                   "core",
-			"_block":                    "OptionStopOnFailure",
+			"_block":                    "OptionCompleteOnCount",
 			"task-id":                   t.ID(),
 			"task-name":                 t.GetName(),
-			"consecutive failure limit": t.GetStopOnFailure(),
-		}).Debug("Setting stop-on-failure limit for task")
+			"run-counts": 		     t.GetCompleteOnCount(),
+		}).Debug("Setting run-counts limit for task")
 		return OptionCompleteOnCount(previous)
 	}
 }
@@ -184,7 +183,7 @@ type TaskCreationRequest struct {
 	Schedule    *Schedule         `json:"schedule"`
 	Start       bool              `json:"start"`
 	MaxFailures int               `json:"max-failures"`
-	MaxCounts uint               `json:"max-counts, omitempty"`
+	RunCounts uint               `json:"run-counts"`
 }
 
 func (tr *TaskCreationRequest) UnmarshalJSON(data []byte) error {
@@ -218,10 +217,9 @@ func (tr *TaskCreationRequest) UnmarshalJSON(data []byte) error {
 			if err := json.Unmarshal(v, &(tr.MaxFailures)); err != nil {
 				return fmt.Errorf("%v (while parsing 'max-failures')", err)
 			}
-		case "max-counts":
-			//todo iza
-			if err := json.Unmarshal(v, &(tr.MaxCounts)); err != nil {
-				return fmt.Errorf("%v (while parsing 'max-counts')", err)
+		case "run-counts":
+			if err := json.Unmarshal(v, &(tr.RunCounts)); err != nil {
+				return fmt.Errorf("%v (while parsing 'run-counts')", err)
 			}
 		case "version":
 			if err := json.Unmarshal(v, &(tr.Version)); err != nil {
@@ -278,10 +276,10 @@ func CreateTaskFromContent(body io.ReadCloser,
 		opts = append(opts, OptionStopOnFailure(tr.MaxFailures))
 	}
 
-	// if a MaxFailures value is included as part of the task creation request
-	if tr.MaxCounts != 0 {
+	// if a RunCounts value is included as part of the task creation request
+	if tr.RunCounts != 0 {
 		// then set the appropriate value in the opts
-		opts = append(opts, OptionCompleteOnCount(tr.MaxCounts))
+		opts = append(opts, OptionCompleteOnCount(tr.RunCounts))
 	}
 
 	if mode == nil {

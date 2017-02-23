@@ -85,8 +85,7 @@ type task struct {
 	Name        string
 	Deadline    string
 	MaxFailures int `json:"max-failures"`
-	//todo iza
-	MaxCounts uint `json:"max-counts, omitempty"`
+	RunCounts uint `json:"run-counts"`
 }
 
 func createTask(ctx *cli.Context) error {
@@ -103,9 +102,9 @@ func createTask(ctx *cli.Context) error {
 	return err
 }
 
+// stringValToInt parses the input (string) as an integer value (and returns that integer value
+// to the caller or an error if the input value cannot be parsed as an integer)
 func stringValToInt(val string) (int, error) {
-	// parse the input (string) as an integer value (and return that integer value
-	// to the caller or an error if the input value cannot be parsed as an integer)
 	parsedField, err := strconv.Atoi(val)
 	if err != nil {
 		splitErr := strings.Split(err.Error(), ": ")
@@ -117,12 +116,10 @@ func stringValToInt(val string) (int, error) {
 	return parsedField, nil
 }
 
+// stringValToInt parses the input (string) as an unsigned integer value (and returns that uint value
+// to the caller or an error if the input value cannot be parsed as an unsigned integer)
 func stringValToUint(val string) (uint, error) {
-	// parse the input (string) as an unsigned integer value (and return that uint value
-	// to the caller or an error if the input value cannot be parsed as an uint)
-
 	valInt, err := stringValToInt(val)
-
 	if err != nil {
 		return uint(0), err
 	}
@@ -132,6 +129,7 @@ func stringValToUint(val string) (uint, error) {
 	// return the unsigned integer equivalent of the input string and a nil error (indicating success)
 	return uint(valInt), err
 }
+
 // Parses the command-line parameters (if any) and uses them to override the underlying
 // schedule for this task or to set a schedule for that task (if one is not already defined,
 // as is the case when we're building a new task from a workflow manifest).
@@ -245,27 +243,6 @@ func (t *task) setScheduleFromCliOptions(ctx *cli.Context) error {
 		duration = &d
 	}
 
-	// set the MaxFailures for the task (if a 'max-failures' value was provided in the CLI options)
-	maxFailuresStrVal := ctx.String("max-failures")
-	if ctx.IsSet("max-failures") || maxFailuresStrVal != "" {
-		maxFailures, err := stringValToInt(maxFailuresStrVal)
-		if err != nil {
-			return err
-		}
-		t.MaxFailures = maxFailures
-	}
-
-	//todo iza
-	//// set the count for the schedule (if a 'count' value was provided)
-	//countStrVal := ctx.String("count")
-	//if ctx.IsSet("count") || countStrVal != "" {
-	//	count, err := stringValToUint(countStrVal)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	t.Schedule.Count = count
-	//}
-
 	// Grab the interval for the schedule (if one was provided). Note that if an
 	// interval value was not passed in and there is no interval defined for the
 	// schedule associated with this task, it's an error
@@ -347,17 +324,16 @@ func (t *task) mergeCliOptions(ctx *cli.Context) error {
 		}
 		t.MaxFailures = maxFailures
 	}
-
-	//todo iza
-	// set the MaxCounts for the task (if a 'max-failures' value was provided in the CLI options)
-	maxCountsVal := ctx.String("max-counts")
-	if ctx.IsSet("max-counts") || maxCountsVal != "" {
-		maxCounts, err := stringValToUint(maxCountsVal)
+	// set the runCounts for the task (if a 'run-counts' value was provided in the CLI options)
+	runCountsVal := ctx.String("run-counts")
+	if ctx.IsSet("run-counts") || runCountsVal != "" {
+		runCounts, err := stringValToUint(runCountsVal)
 		if err != nil {
 			return err
 		}
-		t.MaxCounts = maxCounts
+		t.RunCounts = runCounts
 	}
+
 	// set the schedule for the task from the CLI options (and return the results
 	// of that method call, indicating whether or not an error was encountered while
 	// setting up that schedule)
@@ -402,7 +378,7 @@ func createTaskUsingTaskManifest(ctx *cli.Context) error {
 	}
 
 	// and use the resulting struct to create a new task
-	r := pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, !ctx.IsSet("no-start"), t.MaxFailures, t.MaxCounts)
+	r := pClient.CreateTask(t.Schedule, t.Workflow, t.Name, t.Deadline, !ctx.IsSet("no-start"), t.MaxFailures, t.RunCounts)
 
 	if r.Err != nil {
 		errors := strings.Split(r.Err.Error(), " -- ")
@@ -465,7 +441,7 @@ func createTaskUsingWFManifest(ctx *cli.Context) error {
 	}
 
 	// and use the resulting struct (along with the workflow map we constructed, above) to create a new task
-	r := pClient.CreateTask(t.Schedule, wf, t.Name, t.Deadline, !ctx.IsSet("no-start"), t.MaxFailures, t.MaxCounts)
+	r := pClient.CreateTask(t.Schedule, wf, t.Name, t.Deadline, !ctx.IsSet("no-start"), t.MaxFailures, t.RunCounts)
 	if r.Err != nil {
 		errors := strings.Split(r.Err.Error(), " -- ")
 		errString := "Error creating task:"
@@ -478,6 +454,7 @@ func createTaskUsingWFManifest(ctx *cli.Context) error {
 	fmt.Printf("ID: %s\n", r.ID)
 	fmt.Printf("Name: %s\n", r.Name)
 	fmt.Printf("State: %s\n", r.State)
+
 
 	return nil
 }

@@ -33,7 +33,6 @@ func (w *WindowedSchedule) GetState() ScheduleState {
 	return w.state
 }
 
-
 // Validate validates the start, stop and duration interval of
 // WindowedSchedule
 func (w *WindowedSchedule) Validate() error {

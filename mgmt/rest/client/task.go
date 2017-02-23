@@ -38,8 +38,6 @@ type Schedule struct {
 	Type string `json:"type,omitempty"`
 	// Interval specifies the time duration.
 	Interval string `json:"interval,omitempty"`
-	//// Count specifies the count of iteration.
-	//Count uint `json:"count,omitempty"`
 	// StartTimestamp specifies the beginning time.
 	StartTimestamp *time.Time `json:"start_timestamp,omitempty"`
 	// StopTimestamp specifies the end time.
@@ -50,7 +48,7 @@ type Schedule struct {
 // If the startTask flag is true, the newly created task is started after the creation.
 // Otherwise, it's in the Stopped state. CreateTask is accomplished through a POST HTTP JSON request.
 // A ScheduledTask is returned if it succeeds, otherwise an error is returned.
-func (c *Client) CreateTask(s *Schedule, wf *wmap.WorkflowMap, name string, deadline string, startTask bool, maxFailures int, maxCounts uint) *CreateTaskResult {
+func (c *Client) CreateTask(s *Schedule, wf *wmap.WorkflowMap, name string, deadline string, startTask bool, maxFailures int, runCounts uint) *CreateTaskResult {
 	t := core.TaskCreationRequest{
 		Schedule: &core.Schedule{
 			Type:           s.Type,
@@ -61,7 +59,7 @@ func (c *Client) CreateTask(s *Schedule, wf *wmap.WorkflowMap, name string, dead
 		Workflow:    wf,
 		Start:       startTask,
 		MaxFailures: maxFailures,
-		MaxCounts: maxCounts,
+		RunCounts: runCounts,
 	}
 
 	if name != "" {
