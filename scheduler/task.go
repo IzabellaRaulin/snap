@@ -226,6 +226,8 @@ func (t *task) Spin() {
 	// in time that a task starts spinning. E.g. stopping a task,
 	// waiting a period of time, and starting the task won't show
 	// misses for the interval while stopped.
+	fmt.Println("\nDebug, iza in task.Spin set time.Time{}")
+	//t.lastFireTime = time.Now()
 	t.lastFireTime = time.Time{}
 
 	if t.state == core.TaskStopped {
@@ -237,6 +239,7 @@ func (t *task) Spin() {
 }
 
 func (t *task) Stop() {
+	fmt.Println("\n\n\nDebug iza - stopping task STOP \n\n")
 	t.Lock()
 	defer t.Unlock()
 	if t.state == core.TaskFiring || t.state == core.TaskSpinning {
@@ -276,6 +279,7 @@ func (t *task) Schedule() schedule.Schedule {
 }
 
 func (t *task) spin() {
+	fmt.Println("\n Debug iza task.spin()")
 	var consecutiveFailures int
 	for {
 		taskLogger.Debug("task spin loop")
