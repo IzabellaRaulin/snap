@@ -227,8 +227,8 @@ func (t *task) Spin() {
 	// waiting a period of time, and starting the task won't show
 	// misses for the interval while stopped.
 	fmt.Println("\nDebug, iza in task.Spin set time.Time{}")
-	//t.lastFireTime = time.Now()
-	t.lastFireTime = time.Time{}
+	t.lastFireTime = time.Now()
+	//t.lastFireTime = time.Time{}
 
 	if t.state == core.TaskStopped {
 		t.state = core.TaskSpinning
@@ -242,7 +242,10 @@ func (t *task) Stop() {
 	fmt.Println("\n\n\nDebug iza - stopping task STOP \n\n")
 	t.Lock()
 	defer t.Unlock()
+
+	fmt.Println("\n\n\nDebug iza - stopping task in state: %v\n\n", core.TaskStateLookup[t.state])
 	if t.state == core.TaskFiring || t.state == core.TaskSpinning {
+		fmt.Println("\n\n\nDebug iza - chenge state to TaskStopping\n\n")
 		t.state = core.TaskStopping
 		close(t.killChan)
 	}
