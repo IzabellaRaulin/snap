@@ -53,6 +53,7 @@ func waitOnInterval(last time.Time, i time.Duration) (uint, time.Time) {
 	if (last == time.Time{}) {
 		// for the first run, do not wait on interval
 		// and schedule workflow execution immediately
+		//time.Sleep(i-2*time.Millisecond)
 		return uint(0), time.Now()
 	}
 	// Get the difference in time.Duration since last in nanoseconds (int64)

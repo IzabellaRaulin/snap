@@ -25,6 +25,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/intelsdi-x/snap/core"
+	"fmt"
 )
 
 var (
@@ -197,6 +198,7 @@ func (t *taskWatcherCollection) handleTaskDisabled(taskID string, why string) {
 			"task-id":         taskID,
 			"task-watcher-id": v.id,
 		}).Debug("calling taskwatcher task disabled func")
+		fmt.Println("\n\nDebug iza - handle task disabled, id=%",taskID, " and why=%s\n", why)
 		// Call the catcher
 		v.handler.CatchTaskDisabled(why)
 	}

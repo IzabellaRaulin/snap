@@ -226,9 +226,7 @@ func (t *task) Spin() {
 	// in time that a task starts spinning. E.g. stopping a task,
 	// waiting a period of time, and starting the task won't show
 	// misses for the interval while stopped.
-	fmt.Println("\nDebug, iza in task.Spin set time.Time{}")
 	t.lastFireTime = time.Now()
-	//t.lastFireTime = time.Time{}
 
 	if t.state == core.TaskStopped {
 		t.state = core.TaskSpinning

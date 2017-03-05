@@ -135,10 +135,13 @@ func (s *sticky) CacheMisses(ns string, version int, taskID string) (uint64, err
 }
 
 func (s *sticky) selectPlugin(aps []AvailablePlugin, taskID string) (AvailablePlugin, error) {
+	fmt.Println("\n\n Debug, Iza selecting sticky routing: %v\n", aps[0].Name(), "for a task=%s", taskID)
 	for _, ap := range aps {
 		available := true
-		for _, busyPlugin := range s.plugins {
+		for iza_task, busyPlugin := range s.plugins {
+
 			if ap == busyPlugin {
+				fmt.Println("\n\nDebug Iza - busy plugin in task=%s\n", iza_task)
 				available = false
 			}
 		}
@@ -147,6 +150,7 @@ func (s *sticky) selectPlugin(aps []AvailablePlugin, taskID string) (AvailablePl
 			return ap, nil
 		}
 	}
+	fmt.Println("\n\nDebug Iza - sticky routing: could not select a plugin, %v ",len(aps)-len(s.plugins), "of %v", len(aps), " are available\n")
 	s.logger.WithFields(log.Fields{
 		"_block":   "findAvailablePlugin",
 		"strategy": s.String(),
