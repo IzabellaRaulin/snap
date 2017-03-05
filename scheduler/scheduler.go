@@ -446,7 +446,6 @@ func (s *scheduler) StartTaskTribe(id string) []serror.SnapError {
 }
 
 func (s *scheduler) startTask(id, source string) []serror.SnapError {
-	fmt.Println("\nDebug Iza scheduler.go startTask")
 	logger := schedulerLogger.WithFields(log.Fields{
 		"_block": "start-task",
 		"source": source,

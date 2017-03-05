@@ -207,7 +207,6 @@ func (c *Client) GetTask(id string) *GetTaskResult {
 // StartTask starts a task given a task id. The scheduled task will be in
 // the started state if it succeeds. Otherwise, an error is returned.
 func (c *Client) StartTask(id string) *StartTasksResult {
-	fmt.Println("\n Debug iza client.StartTask")
 	resp, err := c.do("PUT", fmt.Sprintf("/tasks/%v/start", id), ContentTypeJSON)
 
 	if err != nil {

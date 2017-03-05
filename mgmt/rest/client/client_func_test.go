@@ -1,4 +1,4 @@
-// +build legacyiza
+// +build legacyiza legacy
 
 /*
 http://www.apache.org/licenses/LICENSE-2.0.txt
@@ -379,7 +379,7 @@ func TestSnapClient(t *testing.T) {
 					Convey("Stop running task", func() {
 						t1 := c.StopTask(tt.ID)
 						So(t1.Err, ShouldBeNil)
-						fmt.Println("\n\n Debug iza -!!!!!!!!!!!!!!!!!!!!!! REMOVING task %s\n\n", tt.ID)
+						//remove task
 						tr := c.RemoveTask((tt.ID))
 						So(tr.Err, ShouldBeNil)
 					})
@@ -401,7 +401,7 @@ func TestSnapClient(t *testing.T) {
 					Convey("Stop running task", func() {
 						t1 := c.StopTask(tt.ID)
 						So(t1.Err, ShouldBeNil)
-						fmt.Println("\n\n Debug iza -!!!!!!!!!!!!!!!!!!!!!! REMOVING task %s\n\n", tt.ID)
+						//remove task
 						tr := c.RemoveTask((tt.ID))
 						So(tr.Err, ShouldBeNil)
 					})
@@ -415,7 +415,7 @@ func TestSnapClient(t *testing.T) {
 					Convey("Stop running task", func() {
 						t1 := c.StopTask(tt.ID)
 						So(t1.Err, ShouldBeNil)
-						fmt.Println("\n\n Debug iza -!!!!!!!!!!!!!!!!!!!!!! REMOVING task %s\n\n", tt.ID)
+						//remove the task
 						tr := c.RemoveTask((tt.ID))
 						So(tr.Err, ShouldBeNil)
 					})
@@ -564,8 +564,6 @@ func TestSnapClient(t *testing.T) {
 					})
 
 					Convey("event stream", func() {
-
-						fmt.Println("\n\n\n\nDebug, Iza , STARING TESTING!!\n\n\n")
 						v1.StreamingBufferWindow = 0.001
 						sch := &Schedule{Type: "simple", Interval: "100ms"}
 						tf := c.CreateTask(sch, wf, "baron", "", false, 1)
@@ -597,24 +595,15 @@ func TestSnapClient(t *testing.T) {
 						}()
 
 						startResp := c.StartTask(tf.ID)
-						fmt.Println("\n\n\n\nDebug, Iza , tf.State=", tf.State, "\n\n\n")
 						So(startResp.Err, ShouldBeNil)
-						//So(startResp.ResponseBodyMessage(), ShouldBeNil)
 						<-done
-						fmt.Println("Debug, Iza , tf.State=%v before3", tf.State)
 						a.Lock()
-						//todo iza
-						So(len(a.events), ShouldBeGreaterThanOrEqualTo, 1)
+						So(len(a.events), ShouldEqual, 5)
 						So(a.events[0], ShouldEqual, "task-started")
 						a.Unlock()
-						fmt.Println("Debug, Iza len(events)= %v", len(a.events))
-
-
 						for x := 1; x < 5; x++ {
-							fmt.Println("Debug, Iza = event x=%v is %v", x, a.events[x])
 							So(a.events[x], ShouldEqual, "metric-event")
 						}
-						fmt.Println("Debug, Iza , tf.State=%v after", tf.State)
 						So(a.events[1], ShouldEqual, "metric-event")
 						//a.Unlock()
 					})
@@ -625,44 +614,44 @@ func TestSnapClient(t *testing.T) {
 		})//iza: tu jest end task
 
 		Convey("UnloadPlugin", func() {
-			//Convey("unload unknown plugin", func() {
-			//	p := c.UnloadPlugin("not a type", "foo", 3)
-			//	So(p.Err, ShouldNotBeNil)
-			//	So(p.Err.Error(), ShouldEqual, "plugin not found")
-			//})
-			//Convey("unload one of multiple", func() {
-			//	p1 := c.GetPlugins(false)
-			//	So(p1.Err, ShouldBeNil)
-			//	So(len(p1.LoadedPlugins), ShouldEqual, 3)
-			//
-			//	p2 := c.UnloadPlugin("collector", "mock", 2)
-			//	So(p2.Err, ShouldBeNil)
-			//	So(p2.Name, ShouldEqual, "mock")
-			//	So(p2.Version, ShouldEqual, 2)
-			//	So(p2.Type, ShouldEqual, "collector")
-			//
-			//	p3 := c.UnloadPlugin("publisher", "mock-file", 3)
-			//	So(p3.Err, ShouldBeNil)
-			//	So(p3.Name, ShouldEqual, "mock-file")
-			//	So(p3.Version, ShouldEqual, 3)
-			//	So(p3.Type, ShouldEqual, "publisher")
-			//})
-			//Convey("unload when only one plugin loaded", func() {
-			//	p1 := c.GetPlugins(false)
-			//	So(p1.Err, ShouldBeNil)
-			//	So(len(p1.LoadedPlugins), ShouldEqual, 1)
-			//	So(p1.LoadedPlugins[0].Name, ShouldEqual, "mock")
-			//
-			//	p2 := c.UnloadPlugin("collector", "mock", 1)
-			//	So(p2.Err, ShouldBeNil)
-			//	So(p2.Name, ShouldEqual, "mock")
-			//	So(p2.Version, ShouldEqual, 1)
-			//	So(p2.Type, ShouldEqual, "collector")
-			//
-			//	p3 := c.GetPlugins(false)
-			//	So(p3.Err, ShouldBeNil)
-			//	So(len(p3.LoadedPlugins), ShouldEqual, 0)
-			//})
+			Convey("unload unknown plugin", func() {
+				p := c.UnloadPlugin("not a type", "foo", 3)
+				So(p.Err, ShouldNotBeNil)
+				So(p.Err.Error(), ShouldEqual, "plugin not found")
+			})
+			Convey("unload one of multiple", func() {
+				p1 := c.GetPlugins(false)
+				So(p1.Err, ShouldBeNil)
+				So(len(p1.LoadedPlugins), ShouldEqual, 3)
+
+				p2 := c.UnloadPlugin("collector", "mock", 2)
+				So(p2.Err, ShouldBeNil)
+				So(p2.Name, ShouldEqual, "mock")
+				So(p2.Version, ShouldEqual, 2)
+				So(p2.Type, ShouldEqual, "collector")
+
+				p3 := c.UnloadPlugin("publisher", "mock-file", 3)
+				So(p3.Err, ShouldBeNil)
+				So(p3.Name, ShouldEqual, "mock-file")
+				So(p3.Version, ShouldEqual, 3)
+				So(p3.Type, ShouldEqual, "publisher")
+			})
+			Convey("unload when only one plugin loaded", func() {
+				p1 := c.GetPlugins(false)
+				So(p1.Err, ShouldBeNil)
+				So(len(p1.LoadedPlugins), ShouldEqual, 1)
+				So(p1.LoadedPlugins[0].Name, ShouldEqual, "mock")
+
+				p2 := c.UnloadPlugin("collector", "mock", 1)
+				So(p2.Err, ShouldBeNil)
+				So(p2.Name, ShouldEqual, "mock")
+				So(p2.Version, ShouldEqual, 1)
+				So(p2.Type, ShouldEqual, "collector")
+
+				p3 := c.GetPlugins(false)
+				So(p3.Err, ShouldBeNil)
+				So(len(p3.LoadedPlugins), ShouldEqual, 0)
+			})
 		}) // end of unload
 	})
 
