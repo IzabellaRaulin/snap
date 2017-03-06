@@ -80,7 +80,6 @@ func TestWindowedSchedule(t *testing.T) {
 			last := *new(time.Time)
 
 			state := Active
-
 			before := time.Now()
 			for state == Active {
 				r1 := w.Wait(last)

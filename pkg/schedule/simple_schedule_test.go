@@ -10,7 +10,7 @@ import (
 )
 
 func TestSimpleSchedule(t *testing.T) {
-	Convey("Simple Schedule ", t, func() {
+	Convey("Simple Schedule", t, func() {
 		Convey("test Wait()", func() {
 			interval := 100
 			overage := 467
