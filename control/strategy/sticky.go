@@ -152,5 +152,6 @@ func (s *sticky) selectPlugin(aps []AvailablePlugin, taskID string) (AvailablePl
 		"strategy": s.String(),
 		"error":    fmt.Sprintf("%v of %v plugins are available", len(aps)-len(s.plugins), len(aps)),
 	}).Error(ErrCouldNotSelect)
+	fmt.Println("\n\nDebug iza - could not find a plugin sticky\n")
 	return nil, ErrCouldNotSelect
 }

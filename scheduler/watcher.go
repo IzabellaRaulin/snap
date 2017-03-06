@@ -25,6 +25,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/intelsdi-x/snap/core"
+	"fmt"
 )
 
 var (
@@ -180,6 +181,7 @@ func (t *taskWatcherCollection) handleTaskStopped(taskID string) {
 }
 
 func (t *taskWatcherCollection) handleTaskDisabled(taskID string, why string) {
+	fmt.Println("\n\nDebug Iza - task-disabled, why=%v\n", why)
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	// no taskID means no watches, early exit

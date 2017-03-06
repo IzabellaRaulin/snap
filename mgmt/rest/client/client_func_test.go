@@ -565,8 +565,8 @@ func TestSnapClient(t *testing.T) {
 					})
 
 					Convey("event stream", func() {
-						v1.StreamingBufferWindow = 0.01
-						sch := &Schedule{Type: "simple", Interval: "100ms"}
+						v1.StreamingBufferWindow = 0.001
+						sch := &Schedule{Type: "simple", Interval: "1s"}
 						tf := c.CreateTask(sch, wf, "baron", "", false, 1)
 
 						type ea struct {
