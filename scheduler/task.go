@@ -226,7 +226,7 @@ func (t *task) Spin() {
 	// in time that a task starts spinning. E.g. stopping a task,
 	// waiting a period of time, and starting the task won't show
 	// misses for the interval while stopped.
-	t.lastFireTime = time.Now()
+	t.lastFireTime = time.Time{}
 
 	if t.state == core.TaskStopped {
 		t.state = core.TaskSpinning
@@ -239,7 +239,6 @@ func (t *task) Spin() {
 func (t *task) Stop() {
 	t.Lock()
 	defer t.Unlock()
-
 	if t.state == core.TaskFiring || t.state == core.TaskSpinning {
 		t.state = core.TaskStopping
 		close(t.killChan)

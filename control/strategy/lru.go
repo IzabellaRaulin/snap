@@ -24,7 +24,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/intelsdi-x/snap/core"
-	"fmt"
 )
 
 // lru provides a strategy that selects the least recently used available plugin.

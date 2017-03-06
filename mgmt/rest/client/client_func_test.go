@@ -398,6 +398,7 @@ func TestSnapClient(t *testing.T) {
 
 					//todo iza - change it after rebasing
 					So(tt.State, ShouldEqual, "Running")
+
 					Convey("Stop running task", func() {
 						t1 := c.StopTask(tt.ID)
 						So(t1.Err, ShouldBeNil)
@@ -564,7 +565,7 @@ func TestSnapClient(t *testing.T) {
 					})
 
 					Convey("event stream", func() {
-						v1.StreamingBufferWindow = 0.001
+						v1.StreamingBufferWindow = 0.01
 						sch := &Schedule{Type: "simple", Interval: "100ms"}
 						tf := c.CreateTask(sch, wf, "baron", "", false, 1)
 
@@ -589,7 +590,6 @@ func TestSnapClient(t *testing.T) {
 									a.Unlock()
 								case <-r.DoneChan:
 									done <- true
-
 								}
 							}
 						}()
@@ -606,6 +606,7 @@ func TestSnapClient(t *testing.T) {
 						}
 						So(a.events[1], ShouldEqual, "metric-event")
 						//a.Unlock()
+						So(1, ShouldEqual, 2)
 					})
 
 				})
