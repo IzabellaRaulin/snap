@@ -376,7 +376,7 @@ func TestSnapClient(t *testing.T) {
 					So(tt.Err, ShouldNotBeNil)
 				})
 
-				Convey("Creating a task with missing parameters (start_timestamp and stop_timestamp) "+
+				Convey("Creating a task with missing parameters (start_timestamp and stop_timestamp) " +
 					"for windowed schedule", func() {
 					incorrectSchedule := &Schedule{Type: "windowed", Interval: "1s"}
 					tt := c.CreateTask(incorrectSchedule, wf, "baron", "", true, 0)
@@ -513,83 +513,84 @@ func TestSnapClient(t *testing.T) {
 					So(et.Err, ShouldNotBeNil)
 					So(et.Err.Error(), ShouldEqual, "Task must be disabled")
 				})
+
+				Convey("WatchTasks", func() {
+					Convey("invalid task ID", func() {
+						v1.StreamingBufferWindow = 0.01
+
+						type ea struct {
+							events []string
+							sync.Mutex
+						}
+
+						a := new(ea)
+						r := c.WatchTask("1")
+
+						wait := make(chan struct{})
+						go func() {
+							for {
+								select {
+								case e := <-r.EventChan:
+									a.Lock()
+									a.events = append(a.events, e.EventType)
+									if len(a.events) == 5 {
+										r.Close()
+									}
+									a.Unlock()
+								case <-r.DoneChan:
+									close(wait)
+									return
+								}
+							}
+						}()
+						<-wait
+						So(r.Err.Error(), ShouldEqual, "Task not found: ID(1)")
+					})
+					Convey("event stream", func() {
+						v1.StreamingBufferWindow = 0.01
+						sch := &Schedule{Type: "simple", Interval: "100ms"}
+						tf := c.CreateTask(sch, wf, "baron2", "", false, 0)
+
+						type ea struct {
+							events []string
+							sync.Mutex
+						}
+
+						a := new(ea)
+						r := c.WatchTask(tf.ID)
+						So(r.Err, ShouldBeNil)
+						wait := make(chan struct{})
+						go func() {
+							for {
+								select {
+								case e := <-r.EventChan:
+									a.Lock()
+									a.events = append(a.events, e.EventType)
+									if len(a.events) == 5 {
+										r.Close()
+									}
+									a.Unlock()
+								case <-r.DoneChan:
+									close(wait)
+									return
+								}
+							}
+						}()
+
+						startResp := c.StartTask(tf.ID)
+						So(startResp.Err, ShouldBeNil)
+						<-wait
+						a.Lock()
+						defer a.Unlock()
+
+						So(len(a.events), ShouldEqual, 5)
+						So(a.events[0], ShouldEqual, "task-started")
+						for x := 1; x < 5; x++ {
+							So(a.events[x], ShouldEqual, "metric-event")
+						}
+					})
+				}) //end of watch task
 			})
-			Convey("WatchTasks", func() {
-				Convey("invalid task ID", func() {
-					v1.StreamingBufferWindow = 0.01
-
-					type ea struct {
-						events []string
-						sync.Mutex
-					}
-
-					a := new(ea)
-					r := c.WatchTask("1")
-
-					wait := make(chan struct{})
-					go func() {
-						for {
-							select {
-							case e := <-r.EventChan:
-								a.Lock()
-								a.events = append(a.events, e.EventType)
-								if len(a.events) == 5 {
-									r.Close()
-								}
-								a.Unlock()
-							case <-r.DoneChan:
-								close(wait)
-								return
-							}
-						}
-					}()
-					<-wait
-					So(r.Err.Error(), ShouldEqual, "Task not found: ID(1)")
-				})
-				Convey("event stream", func() {
-					v1.StreamingBufferWindow = 0.01
-					sch := &Schedule{Type: "simple", Interval: "100ms"}
-					tf := c.CreateTask(sch, wf, "baron2", "", false, 0)
-
-					type ea struct {
-						events []string
-						sync.Mutex
-					}
-
-					a := new(ea)
-					r := c.WatchTask(tf.ID)
-					So(r.Err, ShouldBeNil)
-					wait := make(chan struct{})
-					go func() {
-						for {
-							select {
-							case e := <-r.EventChan:
-								a.Lock()
-								a.events = append(a.events, e.EventType)
-								if len(a.events) == 5 {
-									r.Close()
-								}
-								a.Unlock()
-							case <-r.DoneChan:
-								close(wait)
-								return
-							}
-						}
-					}()
-
-					startResp := c.StartTask(tf.ID)
-					So(startResp.Err, ShouldBeNil)
-					<-wait
-					a.Lock()
-					defer a.Unlock()
-
-					So(len(a.events), ShouldEqual, 5)
-					So(a.events[0], ShouldEqual, "task-started")
-					for x := 1; x < 5; x++ {
-						So(a.events[x], ShouldEqual, "metric-event")
-					}
-				})
-			}) //end of watch task
 
 		})
 
