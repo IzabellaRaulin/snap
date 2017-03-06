@@ -517,6 +517,7 @@ func TestSnapClient(t *testing.T) {
 					t1 := c.StopTask(tt.ID)
 					So(t1.Err, ShouldBeNil)
 					So(t1.ID, ShouldEqual, tt.ID)
+
 					//try stopping again to make sure channel is closed
 					t2 := c.StopTask(tt.ID)
 					So(t2.Err, ShouldNotBeNil)

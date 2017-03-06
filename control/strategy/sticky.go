@@ -33,7 +33,7 @@ var (
 	ErrCacheDoesNotExist = errors.New("cache does not exist")
 )
 
-// sticky provides a stragey that ... concurrency count is 1
+// sticky provides a strategy that ... concurrency count is 1
 type sticky struct {
 	plugins     map[string]AvailablePlugin
 	metricCache map[string]*cache
@@ -152,6 +152,5 @@ func (s *sticky) selectPlugin(aps []AvailablePlugin, taskID string) (AvailablePl
 		"strategy": s.String(),
 		"error":    fmt.Sprintf("%v of %v plugins are available", len(aps)-len(s.plugins), len(aps)),
 	}).Error(ErrCouldNotSelect)
-	fmt.Println("\n\nDebug iza - could not find a plugin sticky\n")
 	return nil, ErrCouldNotSelect
 }

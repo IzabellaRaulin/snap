@@ -25,7 +25,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/intelsdi-x/snap/core"
-	"fmt"
 )
 
 var (
@@ -86,14 +85,14 @@ func (t *taskWatcherCollection) rm(taskID string, tw *TaskWatcher) {
 func (t *taskWatcherCollection) add(taskID string, twh core.TaskWatcherHandler) (*TaskWatcher, error) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
-	// init map for task ID if it does not eist
+	// init map for task ID if it does not exist
 	if t.coll[taskID] == nil {
 		t.coll[taskID] = make([]*TaskWatcher, 0)
 	}
 	tw := &TaskWatcher{
 		// Assign unique ID to task watcher
 		id: t.tIDCounter,
-		// Add ref to coll for cleanup later
+		// Add ref to call for cleanup later
 		parent:  t,
 		stopped: false,
 		handler: twh,
@@ -181,7 +180,6 @@ func (t *taskWatcherCollection) handleTaskStopped(taskID string) {
 }
 
 func (t *taskWatcherCollection) handleTaskDisabled(taskID string, why string) {
-	fmt.Println("\n\nDebug Iza - task-disabled, why=%v\n", why)
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	// no taskID means no watches, early exit

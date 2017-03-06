@@ -43,7 +43,7 @@ func TestWindowedSchedule(t *testing.T) {
 				r = append(r, r1)
 			}
 			// we should have either 21 or 23 minus 0 missed
-			 So(len(r), ShouldBeBetweenOrEqual, 20, 22)
+			So(len(r), ShouldBeBetweenOrEqual, 20, 22)
 
 			var missed uint
 			for _, x := range r {
@@ -56,7 +56,7 @@ func TestWindowedSchedule(t *testing.T) {
 				r[0].LastTime().Sub(before).Seconds(),
 				ShouldBeBetweenOrEqual,
 				(startWait).Seconds(),
-				(startWait+interval).Seconds(),
+				(startWait + interval).Seconds(),
 			)
 		})
 
@@ -97,7 +97,7 @@ func TestWindowedSchedule(t *testing.T) {
 				}
 			}
 			// we should have either 17 or 19 minus 4 missed
-			 So(len(r), ShouldBeBetweenOrEqual, 16, 18)
+			So(len(r), ShouldBeBetweenOrEqual, 16, 18)
 
 			var missed uint
 			for _, x := range r {
@@ -110,7 +110,7 @@ func TestWindowedSchedule(t *testing.T) {
 				r[0].LastTime().Sub(before).Seconds(),
 				ShouldBeBetweenOrEqual,
 				(startWait).Seconds(),
-				(startWait+interval).Seconds(),
+				(startWait + interval).Seconds(),
 			)
 		})
 
@@ -197,7 +197,7 @@ func TestWindowedSchedule(t *testing.T) {
 				r[0].LastTime().Sub(before).Seconds(),
 				ShouldBeBetweenOrEqual,
 				(startWait).Seconds(),
-				(startWait+interval).Seconds(),
+				(startWait + interval).Seconds(),
 			)
 		})
 
@@ -240,8 +240,9 @@ func TestWindowedSchedule(t *testing.T) {
 			So(missed, ShouldEqual, 0)
 		})
 
-		Convey("start immediately without determined stop", func() {
+		Convey("start immediatelly without stop (no window determined)", func() {
 			interval := time.Millisecond * 10
+			// schedule equivalent to simple schedule
 			w := NewWindowedSchedule(
 				interval,
 				nil,
