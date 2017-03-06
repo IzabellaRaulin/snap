@@ -319,7 +319,6 @@ func TestSnapClient(t *testing.T) {
 				})
 			})
 		})
-
 	})
 
 	if cerr == nil {
@@ -343,10 +342,11 @@ func TestSnapClient(t *testing.T) {
 				So(p.AvailablePlugins, ShouldBeEmpty)
 			})
 		})
-		Convey("unload one of collector", func() {
-			p1 := c.GetPlugins(false)
-			So(p1.Err, ShouldBeNil)
-			So(len(p1.LoadedPlugins), ShouldEqual, 3)
+
+		Convey("unload one of collector plugin", func() {
+			p := c.GetPlugins(false)
+			So(p.Err, ShouldBeNil)
+			So(len(p.LoadedPlugins), ShouldEqual, 3)
 
 			p2 := c.UnloadPlugin("collector", "mock", 2)
 			So(p2.Err, ShouldBeNil)
@@ -355,7 +355,7 @@ func TestSnapClient(t *testing.T) {
 			So(p2.Type, ShouldEqual, "collector")
 
 			Convey("there should be two loaded plugins", func() {
-				p := c.GetPlugins(false)
+				p = c.GetPlugins(false)
 				So(p.Err, ShouldBeNil)
 				So(len(p.LoadedPlugins), ShouldEqual, 2)
 				So(p.AvailablePlugins, ShouldBeEmpty)
@@ -393,15 +393,7 @@ func TestSnapClient(t *testing.T) {
 					correctSchedule := &Schedule{Type: "simple", Interval: "1s"}
 					tt := c.CreateTask(correctSchedule, wf, "baron", "", true, 0)
 					So(tt.Err, ShouldBeNil)
-
 					So(tt.State, ShouldEqual, "Running")
-					Convey("Stop running task", func() {
-						t1 := c.StopTask(tt.ID)
-						So(t1.Err, ShouldBeNil)
-						//remove task
-						tr := c.RemoveTask((tt.ID))
-						So(tr.Err, ShouldBeNil)
-					})
 				})
 
 				Convey("Creating a task with correct configuration for windowed schedule", func() {
@@ -420,13 +412,6 @@ func TestSnapClient(t *testing.T) {
 					tt := c.CreateTask(correctSchedule, wf, "baron", "", true, 0)
 					So(tt.Err, ShouldBeNil)
 					So(tt.State, ShouldEqual, "Running")
-					Convey("Stop running task", func() {
-						t1 := c.StopTask(tt.ID)
-						So(t1.Err, ShouldBeNil)
-						//remove the task
-						tr := c.RemoveTask((tt.ID))
-						So(tr.Err, ShouldBeNil)
-					})
 				})
 			})
 
@@ -461,10 +446,6 @@ func TestSnapClient(t *testing.T) {
 					t1 := c.StartTask(tf.ID)
 					So(t1.Err, ShouldBeNil)
 					So(t1.ID, ShouldEqual, tf.ID)
-					Convey("Stop running task", func() {
-						t1 := c.StopTask(tf.ID)
-						So(t1.Err, ShouldBeNil)
-					})
 				})
 				Convey("RemoveTask", func() {
 					t1 := c.RemoveTask(tf.ID)
@@ -500,7 +481,6 @@ func TestSnapClient(t *testing.T) {
 					So(t2.Err, ShouldBeNil)
 				})
 				Convey("StartTask", func() {
-					So(tt.State, ShouldEqual, "Running")
 					t1 := c.StartTask(tt.ID)
 					So(t1.Err, ShouldNotBeNil)
 					So(t1.Err.Error(), ShouldEqual, "error 0: Task is already running. ")
@@ -534,81 +514,83 @@ func TestSnapClient(t *testing.T) {
 					So(et.Err.Error(), ShouldEqual, "Task must be disabled")
 				})
 			})
-		})
-		Convey("WatchTasks", func() {
-			Convey("invalid task ID", func() {
-				v1.StreamingBufferWindow = 0.01
+			Convey("WatchTasks", func() {
+				Convey("invalid task ID", func() {
+					v1.StreamingBufferWindow = 0.01
 
-				type ea struct {
-					events []string
-					sync.Mutex
-				}
-
-				a := new(ea)
-				r := c.WatchTask("1")
-
-				wait := make(chan struct{})
-				go func() {
-					for {
-						select {
-						case e := <-r.EventChan:
-							a.Lock()
-							a.events = append(a.events, e.EventType)
-							if len(a.events) == 5 {
-								r.Close()
-							}
-							a.Unlock()
-						case <-r.DoneChan:
-							close(wait)
-							return
-						}
+					type ea struct {
+						events []string
+						sync.Mutex
 					}
-				}()
-				<-wait
-				So(r.Err.Error(), ShouldEqual, "Task not found: ID(1)")
-			})
-			Convey("event stream", func() {
-				v1.StreamingBufferWindow = 0.01
-				sch := &Schedule{Type: "simple", Interval: "100ms"}
-				tf := c.CreateTask(sch, wf, "baron2", "", false, 0)
 
-				type ea struct {
-					events []string
-					sync.Mutex
-				}
+					a := new(ea)
+					r := c.WatchTask("1")
 
-				a := new(ea)
-				r := c.WatchTask(tf.ID)
-				So(r.Err, ShouldBeNil)
-				done := make(chan bool)
-				go func() {
-					for {
-						select {
-						case e := <-r.EventChan:
-							a.Lock()
-							a.events = append(a.events, e.EventType)
-							if len(a.events) == 5 {
-								r.Close()
+					wait := make(chan struct{})
+					go func() {
+						for {
+							select {
+							case e := <-r.EventChan:
+								a.Lock()
+								a.events = append(a.events, e.EventType)
+								if len(a.events) == 5 {
+									r.Close()
+								}
+								a.Unlock()
+							case <-r.DoneChan:
+								close(wait)
+								return
 							}
-							a.Unlock()
-						case <-r.DoneChan:
-							done <- true
 						}
+					}()
+					<-wait
+					So(r.Err.Error(), ShouldEqual, "Task not found: ID(1)")
+				})
+				Convey("event stream", func() {
+					v1.StreamingBufferWindow = 0.01
+					sch := &Schedule{Type: "simple", Interval: "100ms"}
+					tf := c.CreateTask(sch, wf, "baron2", "", false, 0)
+
+					type ea struct {
+						events []string
+						sync.Mutex
 					}
-				}()
 
-				startResp := c.StartTask(tf.ID)
-				So(startResp.Err, ShouldBeNil)
-				<-done
-				a.Lock()
-				defer a.Unlock()
+					a := new(ea)
+					r := c.WatchTask(tf.ID)
+					So(r.Err, ShouldBeNil)
+					wait := make(chan struct{})
+					go func() {
+						for {
+							select {
+							case e := <-r.EventChan:
+								a.Lock()
+								a.events = append(a.events, e.EventType)
+								if len(a.events) == 5 {
+									r.Close()
+								}
+								a.Unlock()
+							case <-r.DoneChan:
+								close(wait)
+								return
+							}
+						}
+					}()
 
-				So(len(a.events), ShouldEqual, 5)
-				So(a.events[0], ShouldEqual, "task-started")
-				for x := 1; x < 5; x++ {
-					So(a.events[x], ShouldEqual, "metric-event")
-				}
-			})
+					startResp := c.StartTask(tf.ID)
+					So(startResp.Err, ShouldBeNil)
+					<-wait
+					a.Lock()
+					defer a.Unlock()
+
+					So(len(a.events), ShouldEqual, 5)
+					So(a.events[0], ShouldEqual, "task-started")
+					for x := 1; x < 5; x++ {
+						So(a.events[x], ShouldEqual, "metric-event")
+					}
+				})
+			}) //end of watch task
+
 		})
 
 		Convey("UnloadPlugin", func() {
