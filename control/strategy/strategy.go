@@ -31,7 +31,7 @@ import (
 type MapAvailablePlugin map[uint32]AvailablePlugin
 
 var (
-	ErrCouldNotSelect = errors.New("could not select a plugin - iza")
+	ErrCouldNotSelect = errors.New("could not select a plugin")
 )
 
 type RoutingAndCaching interface {

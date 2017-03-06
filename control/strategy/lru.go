@@ -58,7 +58,6 @@ func (l *lru) Select(aps []AvailablePlugin, _ string) (AvailablePlugin, error) {
 	index := -1
 	for i, ap := range aps {
 		// look for the least recently used
-		fmt.Println("\n\n Debug iza LRU ap.LastHit()=%v\n", ap.LastHit())
 		if ap.LastHit().Before(t) || index == -1 {
 			index = i
 			t = ap.LastHit()
@@ -72,10 +71,8 @@ func (l *lru) Select(aps []AvailablePlugin, _ string) (AvailablePlugin, error) {
 			"index":     aps[index].String(),
 			"hitcount":  aps[index].HitCount(),
 		}).Debug("plugin selected")
-		fmt.Println("\n\n Debug iza LRU plugin selected=%v\n", aps[index].Name())
 		return aps[index], nil
 	}
-	fmt.Println("\n\n Debug iza LRU plugin NOT selected=%v\n")
 	l.logger.WithFields(log.Fields{
 		"block":    "select",
 		"strategy": l.String(),

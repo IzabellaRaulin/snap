@@ -138,7 +138,6 @@ func (s *sticky) selectPlugin(aps []AvailablePlugin, taskID string) (AvailablePl
 	for _, ap := range aps {
 		available := true
 		for _, busyPlugin := range s.plugins {
-
 			if ap == busyPlugin {
 				available = false
 			}

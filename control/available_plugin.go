@@ -82,7 +82,6 @@ func newAvailablePlugin(resp plugin.Response, emitter gomit.Emitter, ep executab
 	if resp.Type != plugin.CollectorPluginType && resp.Type != plugin.ProcessorPluginType && resp.Type != plugin.PublisherPluginType {
 		return nil, strategy.ErrBadType
 	}
-
 	ap := &availablePlugin{
 		meta:        resp.Meta,
 		name:        resp.Meta.Name,
