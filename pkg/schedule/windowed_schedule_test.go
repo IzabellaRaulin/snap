@@ -1,4 +1,4 @@
-// +build legacy
+// +build legacy legacyiza
 
 package schedule
 
@@ -14,11 +14,56 @@ import (
 func TestWindowedSchedule(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	Convey("Windowed Schedule", t, func() {
+		Convey("nominal window without misses", func() {
+			startWait := time.Millisecond * 50
+			windowSize := time.Millisecond * 200
+			interval := time.Millisecond * 10
+
+			start := time.Now().Add(startWait)
+			stop := time.Now().Add(startWait + windowSize)
+			w := NewWindowedSchedule(
+				interval,
+				&start,
+				&stop,
+			)
+
+			err := w.Validate()
+			So(err, ShouldBeNil)
+
+			var r []Response
+			last := *new(time.Time)
+
+			state := Active
+			//todo iza
+			before := time.Now()
+			for state == Active {
+				r1 := w.Wait(last)
+				state = r1.State()
+				last = time.Now()
+				r = append(r, r1)
+			}
+			// we should have either 21 or 23 minus 0 missed
+			 So(len(r), ShouldBeBetweenOrEqual, 20, 22)
+
+			var missed uint
+			for _, x := range r {
+				missed += x.Missed()
+			}
+			So(missed, ShouldEqual, 0)
+
+			// the task is expected to fire immediately on determined start-time
+			So(
+				r[0].LastTime().Sub(before).Seconds(),
+				ShouldBeBetweenOrEqual,
+				(startWait).Seconds(),
+				(startWait+interval).Seconds(),
+			)
+		})
+
 		Convey("nominal window with a few misses", func() {
 			startWait := time.Millisecond * 50
 			windowSize := time.Millisecond * 200
 			interval := time.Millisecond * 10
-			// shouldWait := 1000.0 + float64(interval)
 
 			start := time.Now().Add(startWait)
 			stop := time.Now().Add(startWait + windowSize)
@@ -35,8 +80,8 @@ func TestWindowedSchedule(t *testing.T) {
 			last := *new(time.Time)
 
 			state := Active
-			//todo iza
-			//before := time.Now()
+
+			before := time.Now()
 			for state == Active {
 				r1 := w.Wait(last)
 				state = r1.State()
@@ -51,28 +96,28 @@ func TestWindowedSchedule(t *testing.T) {
 					time.Sleep(w.Interval * 2)
 				}
 			}
-			// we should have either 16 or 17 minus 3 missed
-			// todo iza
-			// So(len(r), ShouldBeBetweenOrEqual, 15, 17)
+			// we should have either 17 or 19 minus 4 missed
+			 So(len(r), ShouldBeBetweenOrEqual, 16, 18)
 
 			var missed uint
 			for _, x := range r {
 				missed += x.Missed()
 			}
-			//todo iza
-			//So(
-			//	r[0].LastTime().Sub(before).Seconds(),
-			//	ShouldBeBetweenOrEqual,
-			//	(startWait+interval).Seconds()*.9,
-			//	(startWait+interval).Seconds()*1.5,
-			//)
+			So(missed, ShouldEqual, 4)
+
+			// the task is expected to fire immediately on determined start-time
+			So(
+				r[0].LastTime().Sub(before).Seconds(),
+				ShouldBeBetweenOrEqual,
+				(startWait).Seconds(),
+				(startWait+interval).Seconds(),
+			)
 		})
 
-		Convey("started in the middle of the window", func() {
+		Convey("started in the past", func() {
 			startWait := time.Millisecond * -200
 			windowSize := time.Millisecond * 350
 			interval := time.Millisecond * 10
-			// shouldWait := 1000.0 + float64(interval)
 
 			start := time.Now().Add(startWait)
 			stop := time.Now().Add(startWait + windowSize)
@@ -88,6 +133,7 @@ func TestWindowedSchedule(t *testing.T) {
 			var r []Response
 			last := *new(time.Time)
 
+			before := time.Now()
 			state := Active
 			for state == Active {
 				r1 := w.Wait(last)
@@ -103,16 +149,23 @@ func TestWindowedSchedule(t *testing.T) {
 					time.Sleep(w.Interval * 2)
 				}
 			}
-			// we should have either 16 or 17 minus 3 missed
-			//todo iza
-			//So(len(r), ShouldBeBetweenOrEqual, 10, 12)
+			// we should have either 12 or 14 results minus 4 missed
+			So(len(r), ShouldBeBetweenOrEqual, 11, 13)
 
 			var missed uint
 			for _, x := range r {
 				missed += x.Missed()
 			}
-			//todo iza
-			//So(missed, ShouldBeBetweenOrEqual, 22, 24)
+			So(missed, ShouldEqual, 4)
+
+			// start_time points to the past,
+			// so the task is expected to fire immediately
+			So(
+				r[0].LastTime().Sub(before).Seconds(),
+				ShouldBeBetweenOrEqual,
+				0,
+				(interval).Seconds(),
+			)
 		})
 
 		Convey("start without stop", func() {
@@ -132,28 +185,27 @@ func TestWindowedSchedule(t *testing.T) {
 			var r []Response
 			last := *new(time.Time)
 
-			//todo iza
-			//before := time.Now()
+			before := time.Now()
 			for len(r) <= 10 {
 				r1 := w.Wait(last)
 				last = time.Now()
 				r = append(r, r1)
 			}
-			//todo iza
-			//So(
-			//	r[0].LastTime().Sub(before).Seconds(),
-			//	ShouldBeBetweenOrEqual,
-			//	(startWait+interval).Seconds()*.9,
-			//	(startWait+interval).Seconds()*1.5,
-			//)
+
+			// the task is expected to fire immediately on start_time
+			So(
+				r[0].LastTime().Sub(before).Seconds(),
+				ShouldBeBetweenOrEqual,
+				(startWait).Seconds(),
+				(startWait+interval).Seconds(),
+			)
 		})
 
 		Convey("stop without start", func() {
-			startWait := time.Millisecond * 50
 			windowSize := time.Millisecond * 200
 			interval := time.Millisecond * 10
 
-			stop := time.Now().Add(startWait + windowSize)
+			stop := time.Now().Add(windowSize)
 			w := NewWindowedSchedule(
 				interval,
 				nil,
@@ -166,20 +218,57 @@ func TestWindowedSchedule(t *testing.T) {
 			var r []Response
 			last := *new(time.Time)
 
-			//todo iza
-			//before := time.Now()
+			before := time.Now()
 			for len(r) <= 10 {
 				r1 := w.Wait(last)
 				last = time.Now()
 				r = append(r, r1)
 			}
-			//todo iza
-			//So(
-			//	r[0].LastTime().Sub(before).Seconds(),
-			//	ShouldBeBetweenOrEqual,
-			//	(interval).Seconds()*.9,
-			//	(interval).Seconds()*1.5,
-			//)
+
+			// the task should start immediately
+			So(
+				r[0].LastTime().Sub(before).Seconds(),
+				ShouldBeBetweenOrEqual,
+				0,
+				(interval).Seconds(),
+			)
+
+			var missed uint
+			for _, x := range r {
+				missed += x.Missed()
+			}
+			So(missed, ShouldEqual, 0)
+		})
+
+		Convey("start immediately without determined stop", func() {
+			interval := time.Millisecond * 10
+			w := NewWindowedSchedule(
+				interval,
+				nil,
+				nil,
+			)
+
+			err := w.Validate()
+			So(err, ShouldBeNil)
+
+			var r []Response
+			last := *new(time.Time)
+
+			before := time.Now()
+			for len(r) <= 10 {
+				r1 := w.Wait(last)
+				last = time.Now()
+				r = append(r, r1)
+			}
+
+			// the task should start immediately
+			So(
+				r[0].LastTime().Sub(before).Seconds(),
+				ShouldBeBetweenOrEqual,
+				0,
+				(interval).Seconds(),
+			)
+
 		})
 
 		Convey("start time in past is ok (as long as window ends in the future)", func() {
