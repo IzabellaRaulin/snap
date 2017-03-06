@@ -417,7 +417,6 @@ func TestSnapClient(t *testing.T) {
 
 			Convey("valid task not started on creation", func() {
 				tf := c.CreateTask(sch, wf, "baron", "", false, 0)
-
 				So(tf.Err, ShouldBeNil)
 				So(tf.Name, ShouldEqual, "baron")
 				So(tf.State, ShouldEqual, "Stopped")
@@ -497,7 +496,6 @@ func TestSnapClient(t *testing.T) {
 					t1 := c.StopTask(tt.ID)
 					So(t1.Err, ShouldBeNil)
 					So(t1.ID, ShouldEqual, tt.ID)
-
 					//try stopping again to make sure channel is closed
 					t2 := c.StopTask(tt.ID)
 					So(t2.Err, ShouldNotBeNil)
@@ -513,7 +511,6 @@ func TestSnapClient(t *testing.T) {
 					So(et.Err, ShouldNotBeNil)
 					So(et.Err.Error(), ShouldEqual, "Task must be disabled")
 				})
-
 				Convey("WatchTasks", func() {
 					Convey("invalid task ID", func() {
 						v1.StreamingBufferWindow = 0.01
@@ -549,7 +546,7 @@ func TestSnapClient(t *testing.T) {
 					Convey("event stream", func() {
 						v1.StreamingBufferWindow = 0.01
 						sch := &Schedule{Type: "simple", Interval: "100ms"}
-						tf := c.CreateTask(sch, wf, "baron2", "", false, 0)
+						tf := c.CreateTask(sch, wf, "baron", "", false, 0)
 
 						type ea struct {
 							events []string
@@ -576,7 +573,6 @@ func TestSnapClient(t *testing.T) {
 								}
 							}
 						}()
-
 						startResp := c.StartTask(tf.ID)
 						So(startResp.Err, ShouldBeNil)
 						<-wait
@@ -589,11 +585,9 @@ func TestSnapClient(t *testing.T) {
 							So(a.events[x], ShouldEqual, "metric-event")
 						}
 					})
-				}) //end of watch task
+				})
 			})
-
 		})
-
 		Convey("UnloadPlugin", func() {
 			Convey("unload unknown plugin", func() {
 				p := c.UnloadPlugin("not a type", "foo", 3)
