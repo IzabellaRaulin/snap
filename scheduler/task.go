@@ -402,11 +402,17 @@ func (t *task) spin() {
 		select {
 		case sr := <-t.schResponseChan:
 			switch sr.State() {
-			// If response show this schedule is stil active we fire
+			// If response show this schedule is still active we fire
 			case schedule.Active:
 				t.missedIntervals += sr.Missed()
 				t.lastFireTime = time.Now()
+				taskLogger.WithFields(log.Fields{
+						"hitCount":                  t.hitCount,
+				}).Warn("Debug IZA!!!!!! hitCount1")
 				t.hitCount++
+				taskLogger.WithFields(log.Fields{
+						"hitCount":                  t.hitCount,
+				}).Warn("Debug IZA!!!!!! hitCount2")
 				t.fire()
 				if t.lastFailureTime == t.lastFireTime {
 					consecutiveFailures++
@@ -443,6 +449,9 @@ func (t *task) spin() {
 
 			// Schedule has ended
 			case schedule.Ended:
+				taskLogger.WithFields(log.Fields{
+						"hitCount":                  t.hitCount,
+				}).Warn("Debug IZA!!!!!!ENded")
 				// You must lock task to change state
 				t.Lock()
 				t.state = core.TaskEnded

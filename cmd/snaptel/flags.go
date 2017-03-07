@@ -114,6 +114,11 @@ var (
 		Usage: "Start time for the task schedule [defaults to now]",
 	}
 
+	//todo iza
+	flTaskSchedCount = cli.StringFlag{
+		Name:  "count",
+		Usage: "Count to do [defaults to 0]",
+	}
 	flTaskSchedStartDate = cli.StringFlag{
 		Name:  "start-date",
 		Usage: "Start date for the task schedule [defaults to today]",

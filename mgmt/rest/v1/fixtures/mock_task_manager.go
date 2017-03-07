@@ -94,7 +94,7 @@ func (t *mockTask) WMap() *wmap.WorkflowMap {
 	return wmap.NewWorkflowMap()
 }
 func (t *mockTask) Schedule() schedule.Schedule {
-	return schedule.NewSimpleSchedule(time.Second * 1)
+	return schedule.NewSimpleSchedule(time.Second * 1, nil, nil)
 }
 func (t *mockTask) MaxFailures() int { return 10 }
 

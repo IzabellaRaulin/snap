@@ -31,6 +31,7 @@ type Schedule struct {
 	Interval       string     `json:"interval,omitempty"`
 	StartTimestamp *time.Time `json:"start_timestamp,omitempty"`
 	StopTimestamp  *time.Time `json:"stop_timestamp,omitempty"`
+	Count  	       uint 	  `json:"count,omitempty"`
 }
 
 func makeSchedule(s Schedule) (schedule.Schedule, error) {
@@ -65,6 +66,7 @@ func makeSchedule(s Schedule) (schedule.Schedule, error) {
 			d,
 			s.StartTimestamp,
 			s.StopTimestamp,
+			s.Count,
 		)
 
 		err = sch.Validate()

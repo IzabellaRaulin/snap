@@ -42,6 +42,9 @@ type Schedule struct {
 	StartTimestamp *time.Time `json:"start_timestamp,omitempty"`
 	// StopTimestamp specifies the end time.
 	StopTimestamp *time.Time `json:"stop_timestamp,omitempty"`
+	// Count
+	Count uint `json:"count,omitempty"`
+
 }
 
 // CreateTask creates a task given the schedule, workflow, task name, and task state.
