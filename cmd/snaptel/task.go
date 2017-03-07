@@ -115,6 +115,20 @@ func stringValToInt(val string) (int, error) {
 	return parsedField, nil
 }
 
+// stringValToInt parses the input (string) as an unsigned integer value (and returns that uint value
+// to the caller or an error if the input value cannot be parsed as an unsigned integer)
+func stringValToUint(val string) (uint, error) {
+	valInt, err := stringValToInt(val)
+	if err != nil {
+		return uint(0), err
+	}
+	if valInt < 0 {
+		return uint(0), fmt.Errorf("Value '%v' is a negative number and cannot be parsed as an unsigned integer", val)
+	}
+	// return the unsigned integer equivalent of the input string and a nil error (indicating success)
+	return uint(valInt), err
+}
+
 // Parses the command-line parameters (if any) and uses them to override the underlying
 // schedule for this task or to set a schedule for that task (if one is not already defined,
 // as is the case when we're building a new task from a workflow manifest).
@@ -233,6 +247,13 @@ func (t *task) setScheduleFromCliOptions(ctx *cli.Context) error {
 	interval := ctx.String("interval")
 	if !ctx.IsSet("interval") && interval == "" && t.Schedule.Interval == "" {
 		return fmt.Errorf("Usage error (missing interval value); when constructing a new task schedule an interval must be provided")
+	}
+
+	countValStr := ctx.String("count")
+	if ctx.IsSet("count") || countValStr != "" {
+		if count, err := stringValToUint(countValStr); err == nil {
+			t.Schedule.Count = count
+		}
 	}
 	// if a start, stop, or duration value was provided, or if the existing schedule for this task
 	// is 'windowed', then it's a 'windowed' schedule

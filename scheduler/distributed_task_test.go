@@ -89,7 +89,9 @@ func TestDistributedWorkflow(t *testing.T) {
 			//Create a task
 			//Create a workflowmap
 			wf := dsWFMap(port1)
-			t, errs := sch.CreateTask(schedule.NewSimpleSchedule(time.Second), wf, true)
+			// create a simple schedule (equals to windowed schedule without determined start and stop timestamp)
+			s := schedule.NewWindowedSchedule(time.Second, nil, nil, 0)
+			t, errs := sch.CreateTask(s, wf, true)
 			So(len(errs.Errors()), ShouldEqual, 0)
 			So(t, ShouldNotBeNil)
 			// stop the scheduler and control (since in nested Convey statements, the
@@ -103,7 +105,9 @@ func TestDistributedWorkflow(t *testing.T) {
 		Convey("Test task with invalid remote port", func() {
 			wf := dsWFMap(0)
 			controlproxy.MAX_CONNECTION_TIMEOUT = 1 * time.Second
-			t, errs := sch.CreateTask(schedule.NewSimpleSchedule(time.Second), wf, true)
+			// create a simple schedule (equals to windowed schedule without determined start and stop timestamp)
+			s := schedule.NewWindowedSchedule(time.Second, nil, nil, 0)
+			t, errs := sch.CreateTask(s, wf, true)
 			So(len(errs.Errors()), ShouldEqual, 1)
 			So(t, ShouldBeNil)
 			// stop the scheduler and control (since in nested Convey statements, the
@@ -118,7 +122,9 @@ func TestDistributedWorkflow(t *testing.T) {
 			_, err := c2.Unload(passthru)
 			So(err, ShouldBeNil)
 			wf := dsWFMap(port1)
-			t, errs := sch.CreateTask(schedule.NewSimpleSchedule(time.Second), wf, true)
+			// create a simple schedule (equals to windowed schedule without determined start and stop timestamp)
+			s := schedule.NewWindowedSchedule(time.Second, nil, nil, 0)
+			t, errs := sch.CreateTask(s, wf, true)
 			So(len(errs.Errors()), ShouldEqual, 1)
 			So(t, ShouldBeNil)
 			// stop the scheduler and control (since in nested Convey statements, the
@@ -136,7 +142,8 @@ func TestDistributedWorkflow(t *testing.T) {
 			// define an interval that the simple scheduler will run on every 100ms
 			interval := time.Millisecond * 100
 			// create our task; should be disabled after 3 failures
-			t, errs := sch.CreateTask(schedule.NewSimpleSchedule(interval), wf, true)
+			s := schedule.NewWindowedSchedule(interval, nil, nil, 0)
+			t, errs := sch.CreateTask(s, wf, true)
 			// ensure task was created successfully
 			So(len(errs.Errors()), ShouldEqual, 0)
 			So(t, ShouldNotBeNil)
@@ -198,10 +205,10 @@ func TestDistributedSubscriptions(t *testing.T) {
 		port1 := cfg.ListenPort
 		c2 := control.New(cfg)
 		schcfg := GetDefaultConfig()
-		sch := New(schcfg)
+		s := New(schcfg)
 		c2.Start()
-		sch.SetMetricManager(c1)
-		err := sch.Start()
+		s.SetMetricManager(c1)
+		err := s.Start()
 		So(err, ShouldBeNil)
 		// Load appropriate plugins into each control.
 		mock2Path := helper.PluginFilePath("snap-plugin-collector-mock2")
@@ -227,9 +234,11 @@ func TestDistributedSubscriptions(t *testing.T) {
 			//Create a task
 			//Create a workflowmap
 			wf := dsWFMap(port1)
+			// create a simple schedule which equals to windowed schedule without start and stop time
+			sch := schedule.NewWindowedSchedule(time.Second, nil, nil, 0)
 			// Create a task that is not started immediately so we can
 			// validate deps correctly.
-			t, errs := sch.CreateTask(schedule.NewSimpleSchedule(time.Second), wf, false)
+			t, errs := s.CreateTask(sch, wf, false)
 			So(len(errs.Errors()), ShouldEqual, 0)
 			So(t, ShouldNotBeNil)
 			schTask := t.(*task)
@@ -238,7 +247,7 @@ func TestDistributedSubscriptions(t *testing.T) {
 			localMockManager := &subscriptionManager{Fail: false}
 			schTask.RemoteManagers.Add("", localMockManager)
 			// Start task. We expect it to fail while subscribing deps
-			terrs := sch.StartTask(t.ID())
+			terrs := s.StartTask(t.ID())
 			So(terrs, ShouldNotBeNil)
 			Convey("So dependencies should have been unsubscribed", func() {
 				// Ensure that unsubscribe call count is equal to subscribe call count
@@ -253,9 +262,11 @@ func TestDistributedSubscriptions(t *testing.T) {
 			//Create a task
 			//Create a workflowmap
 			wf := dsWFMap(port1)
+			// create a simple schedule which equals to windowed schedule without start and stop time
+			sch := schedule.NewWindowedSchedule(time.Second, nil, nil, 0)
 			// Create a task that is not started immediately so we can
 			// validate deps correctly.
-			t, errs := sch.CreateTask(schedule.NewSimpleSchedule(time.Second), wf, false)
+			t, errs := s.CreateTask(sch, wf, false)
 			So(len(errs.Errors()), ShouldEqual, 0)
 			So(t, ShouldNotBeNil)
 			schTask := t.(*task)
@@ -265,7 +276,7 @@ func TestDistributedSubscriptions(t *testing.T) {
 			schTask.RemoteManagers.Add(fmt.Sprintf("127.0.0.1:%v", port1), remoteMockManager)
 
 			// Start task. We expect it to fail while subscribing deps
-			terrs := sch.StartTask(t.ID())
+			terrs := s.StartTask(t.ID())
 			So(terrs, ShouldNotBeNil)
 			Convey("So dependencies should have been unsubscribed", func() {
 				// Ensure that unsubscribe call count is equal to subscribe call count
@@ -282,7 +293,8 @@ func TestDistributedSubscriptions(t *testing.T) {
 			wf := dsWFMap(port1)
 			// Create a task that is not started immediately so we can
 			// validate deps correctly.
-			t, errs := sch.CreateTask(schedule.NewSimpleSchedule(time.Second), wf, false)
+			sch := schedule.NewWindowedSchedule(time.Second, nil, nil, 0)
+			t, errs := s.CreateTask(sch, wf, false)
 			So(len(errs.Errors()), ShouldEqual, 0)
 			So(t, ShouldNotBeNil)
 			schTask := t.(*task)
@@ -290,7 +302,7 @@ func TestDistributedSubscriptions(t *testing.T) {
 			schTask.RemoteManagers.Add("", localMockManager)
 			remoteMockManager := &subscriptionManager{Fail: false}
 			schTask.RemoteManagers.Add(fmt.Sprintf("127.0.0.1:%v", port1), remoteMockManager)
-			terrs := sch.StartTask(t.ID())
+			terrs := s.StartTask(t.ID())
 			So(terrs, ShouldBeNil)
 			Convey("So all depndencies should have been subscribed to", func() {
 				// Ensure that unsubscribe call count is equal to subscribe call count

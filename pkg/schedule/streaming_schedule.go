@@ -46,7 +46,7 @@ func (s *StreamingScheduleResponse) Missed() uint {
 	return 0
 }
 
-// LastTime retruns the last response time
+// LastTime returns the last response time
 func (s *StreamingScheduleResponse) LastTime() time.Time {
 	return time.Time{}
 }
