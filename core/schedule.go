@@ -21,7 +21,6 @@ package core
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/intelsdi-x/snap/pkg/schedule"
@@ -53,11 +52,8 @@ func makeSchedule(s Schedule) (schedule.Schedule, error) {
 		}
 		return sch, nil
 	case "windowed":
-		if s.StartTimestamp == nil || s.StopTimestamp == nil || s.Interval == "" {
-			errmsg := fmt.Sprintf("missing parameter/parameters in configuration of windowed schedule,"+
-				"start_timestamp: %s, stop_timestamp: %s, interval: %s",
-				s.StartTimestamp, s.StopTimestamp, s.Interval)
-			return nil, errors.New(errmsg)
+		if s.Interval == "" {
+			return nil, errors.New("missing `interval` in configuration of windowed schedule")
 		}
 
 		d, err := time.ParseDuration(s.Interval)

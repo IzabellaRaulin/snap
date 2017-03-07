@@ -80,7 +80,7 @@ func TestMakeSchedule(t *testing.T) {
 		rsched, err := makeSchedule(*sched1)
 		So(rsched, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldStartWith, "missing parameter/parameters in configuration of windowed schedule")
+		So(err.Error(), ShouldStartWith, "missing `interval` in configuration of windowed schedule")
 	})
 
 	Convey("Windowed schedule with bad duration", t, func() {
@@ -102,22 +102,37 @@ func TestMakeSchedule(t *testing.T) {
 		So(err.Error(), ShouldEqual, "Interval must be greater than 0")
 	})
 
-	Convey("Windowed schedule with missing start_timestamp", t, func() {
-		now := time.Now()
-		sched1 := &Schedule{Type: "windowed", Interval: "1s", StopTimestamp: &now}
+	Convey("Windowed schedule without determined start_timestamp", t, func() {
+		stopTime := time.Now().Add(time.Second)
+		sched1 := &Schedule{Type: "windowed", Interval: "1s", StopTimestamp: &stopTime}
 		rsched, err := makeSchedule(*sched1)
-		So(rsched, ShouldBeNil)
-		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldStartWith, "missing parameter/parameters in configuration of windowed schedule")
+		So(err, ShouldBeNil)
+		So(rsched, ShouldNotBeNil)
 	})
 
-	Convey("Windowed schedule with missing stop_timestamp", t, func() {
-		now := time.Now()
-		sched1 := &Schedule{Type: "windowed", Interval: "1s", StartTimestamp: &now}
+	Convey("Windowed schedule without determined stop_timestamp", t, func() {
+		startTime := time.Now().Add(time.Second)
+		sched1 := &Schedule{Type: "windowed", Interval: "1s", StartTimestamp: &startTime}
 		rsched, err := makeSchedule(*sched1)
-		So(rsched, ShouldBeNil)
-		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldStartWith, "missing parameter/parameters in configuration of windowed schedule")
+		So(err, ShouldBeNil)
+		So(rsched, ShouldNotBeNil)
+	})
+
+	Convey("Windowed schedule without determined start and stop", t, func() {
+		sched1 := &Schedule{Type: "windowed", Interval: "1s"}
+		rsched, err := makeSchedule(*sched1)
+		So(err, ShouldBeNil)
+		So(rsched, ShouldNotBeNil)
+	})
+
+	Convey("Windowed schedule with start in the past", t, func() {
+		startTime := time.Now().Add(-2 * time.Minute)
+		stopTime := time.Now().Add(1 * time.Minute)
+		sched1 := &Schedule{Type: "windowed", Interval: "1s",
+			StartTimestamp: &startTime, StopTimestamp: &stopTime}
+		rsched, err := makeSchedule(*sched1)
+		So(err, ShouldBeNil)
+		So(rsched, ShouldNotBeNil)
 	})
 
 	Convey("Windowed schedule with stop in the past", t, func() {

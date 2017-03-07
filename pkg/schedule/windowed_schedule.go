@@ -28,6 +28,15 @@ func NewWindowedSchedule(i time.Duration, start *time.Time, stop *time.Time) *Wi
 	}
 }
 
+// NewSimpleSchedule returns an instance of WindowedSchedule without determined start and stop time
+func NewSimpleSchedule(i time.Duration) *WindowedSchedule {
+	return &WindowedSchedule{
+		Interval:  i,
+		StartTime: nil,
+		StopTime:  nil,
+	}
+}
+
 // GetState returns ScheduleState of WindowedSchedule
 func (w *WindowedSchedule) GetState() ScheduleState {
 	return w.state
