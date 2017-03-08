@@ -1,4 +1,4 @@
-// +build medium
+// +build medium legacyiza
 
 /*
 http://www.apache.org/licenses/LICENSE-2.0.txt
@@ -87,5 +87,9 @@ func readBody(r *http.Response) []byte {
 		log.Fatal(err)
 	}
 	r.Body.Close()
+
+
+
+
 	return b
 }

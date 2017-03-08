@@ -552,7 +552,8 @@ func getSchedule(s *core.Schedule) schedule.Schedule {
 			log.WithField("_block", "get-schedule").Error(e)
 			return nil
 		}
-		return schedule.NewSimpleSchedule(d)
+		// return a simple schedule (equals to windowed schedule without determined start and stop timestamp)
+		return schedule.NewWindowedSchedule(d, nil, nil, s.Count)
 	}
 	return nil
 }

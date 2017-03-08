@@ -406,13 +406,7 @@ func (t *task) spin() {
 			case schedule.Active:
 				t.missedIntervals += sr.Missed()
 				t.lastFireTime = time.Now()
-				taskLogger.WithFields(log.Fields{
-						"hitCount":                  t.hitCount,
-				}).Warn("Debug IZA!!!!!! hitCount1")
 				t.hitCount++
-				taskLogger.WithFields(log.Fields{
-						"hitCount":                  t.hitCount,
-				}).Warn("Debug IZA!!!!!! hitCount2")
 				t.fire()
 				if t.lastFailureTime == t.lastFireTime {
 					consecutiveFailures++
@@ -449,9 +443,6 @@ func (t *task) spin() {
 
 			// Schedule has ended
 			case schedule.Ended:
-				taskLogger.WithFields(log.Fields{
-						"hitCount":                  t.hitCount,
-				}).Warn("Debug IZA!!!!!!ENded")
 				// You must lock task to change state
 				t.Lock()
 				t.state = core.TaskEnded

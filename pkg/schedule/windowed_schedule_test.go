@@ -25,6 +25,7 @@ func TestWindowedSchedule(t *testing.T) {
 				interval,
 				&start,
 				&stop,
+				0,
 			)
 
 			err := w.Validate()
@@ -72,6 +73,7 @@ func TestWindowedSchedule(t *testing.T) {
 				interval,
 				&start,
 				&stop,
+				0,
 			)
 
 			err := w.Validate()
@@ -127,6 +129,7 @@ func TestWindowedSchedule(t *testing.T) {
 				interval,
 				&start,
 				&stop,
+				0,
 			)
 
 			err := w.Validate()
@@ -180,6 +183,7 @@ func TestWindowedSchedule(t *testing.T) {
 				interval,
 				&start,
 				nil,
+				0,
 			)
 
 			err := w.Validate()
@@ -213,6 +217,7 @@ func TestWindowedSchedule(t *testing.T) {
 				interval,
 				nil,
 				&stop,
+				0,
 			)
 
 			err := w.Validate()
@@ -250,6 +255,7 @@ func TestWindowedSchedule(t *testing.T) {
 				interval,
 				nil,
 				nil,
+				0,
 			)
 
 			err := w.Validate()
@@ -278,7 +284,7 @@ func TestWindowedSchedule(t *testing.T) {
 		Convey("start time in past is ok (as long as window ends in the future)", func() {
 			start := time.Now().Add(time.Second * -10)
 			stop := time.Now().Add(time.Second * 10)
-			w := NewWindowedSchedule(time.Millisecond*100, &start, &stop)
+			w := NewWindowedSchedule(time.Millisecond*100, &start, &stop, 0)
 			err := w.Validate()
 			So(err, ShouldEqual, nil)
 		})
@@ -286,7 +292,7 @@ func TestWindowedSchedule(t *testing.T) {
 		Convey("window in past", func() {
 			start := time.Now().Add(time.Second * -20)
 			stop := time.Now().Add(time.Second * -10)
-			w := NewWindowedSchedule(time.Millisecond*100, &start, &stop)
+			w := NewWindowedSchedule(time.Millisecond*100, &start, &stop, 0)
 			err := w.Validate()
 			So(err, ShouldEqual, ErrInvalidStopTime)
 		})
@@ -294,7 +300,7 @@ func TestWindowedSchedule(t *testing.T) {
 		Convey("cart before the horse", func() {
 			start := time.Now().Add(time.Second * 100)
 			stop := time.Now().Add(time.Second * 10)
-			w := NewWindowedSchedule(time.Millisecond*100, &start, &stop)
+			w := NewWindowedSchedule(time.Millisecond*100, &start, &stop, 0)
 			err := w.Validate()
 			So(err, ShouldEqual, ErrStopBeforeStart)
 		})

@@ -21,10 +21,10 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/intelsdi-x/snap/pkg/schedule"
-	"fmt"
 )
 
 type Schedule struct {
@@ -32,40 +32,19 @@ type Schedule struct {
 	Interval       string     `json:"interval,omitempty"`
 	StartTimestamp *time.Time `json:"start_timestamp,omitempty"`
 	StopTimestamp  *time.Time `json:"stop_timestamp,omitempty"`
-	Count  	       uint 	  `json:"count,omitempty"`
+	Count          uint       `json:"count,omitempty"`
 }
 
 func makeSchedule(s Schedule) (schedule.Schedule, error) {
 	switch s.Type {
-	case "simple":
+	case "simple", "windowed":
 		if s.Interval == "" {
-			return nil, errors.New("missing `interval` in configuration of simple schedule")
+			return nil, fmt.Errorf("missing `interval` in configuration of %s schedule", s.Type)
 		}
 
 		d, err := time.ParseDuration(s.Interval)
 		if err != nil {
 			return nil, err
-		}
-		sch := schedule.NewSimpleSchedule(d)
-
-		err = sch.Validate()
-		if err != nil {
-			return nil, err
-		}
-		return sch, nil
-	case "windowed":
-		if s.Interval == "" {
-			return nil, errors.New("missing `interval` in configuration of windowed schedule")
-		}
-
-		d, err := time.ParseDuration(s.Interval)
-		if err != nil {
-			return nil, err
-		}
-
-		fmt.Println("\n\nDebug, Iza - make schedule - s.Count=%v\n", s.Count)
-		if s.Count == uint(0) {
-			panic("Iza")
 		}
 
 		sch := schedule.NewWindowedSchedule(

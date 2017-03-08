@@ -44,7 +44,6 @@ type Schedule struct {
 	StopTimestamp *time.Time `json:"stop_timestamp,omitempty"`
 	// Count
 	Count uint `json:"count,omitempty"`
-
 }
 
 // CreateTask creates a task given the schedule, workflow, task name, and task state.
@@ -58,14 +57,11 @@ func (c *Client) CreateTask(s *Schedule, wf *wmap.WorkflowMap, name string, dead
 			Interval:       s.Interval,
 			StartTimestamp: s.StartTimestamp,
 			StopTimestamp:  s.StopTimestamp,
-			Count: 		s.Count,
+			Count:          s.Count,
 		},
 		Workflow:    wf,
 		Start:       startTask,
 		MaxFailures: maxFailures,
-	}
-	if s.Count == 0 {
-		panic("Iza-4 client/task.go cannot create task")
 	}
 	if name != "" {
 		t.Name = name

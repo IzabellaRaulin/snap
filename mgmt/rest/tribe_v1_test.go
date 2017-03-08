@@ -1,4 +1,4 @@
-// +build medium
+// +build medium legacyiza
 
 /*
 http://www.apache.org/licenses/LICENSE-2.0.txt
@@ -37,7 +37,7 @@ import (
 
 	"github.com/intelsdi-x/gomit"
 	"github.com/intelsdi-x/snap/control"
-	"github.com/intelsdi-x/snap/core"
+//	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/core/tribe_event"
 	"github.com/intelsdi-x/snap/mgmt/rest/v1/rbody"
 	"github.com/intelsdi-x/snap/mgmt/tribe"
@@ -155,11 +155,17 @@ func addAgreement(port int, name string) *rbody.APIResponse {
 	return getAPIResponse(resp)
 }
 
+
 func TestTribeTaskAgreements(t *testing.T) {
 	log.SetLevel(log.WarnLevel)
 	numOfNodes := 5
 	aName := "agreement99"
-	mgtPorts, tribePort, lpe := startTribes(numOfNodes, "")
+
+
+
+ //mgtPorts, tribePort, lpe := startTribes(numOfNodes, "")
+	mgtPorts, _, lpe := startTribes(numOfNodes, "")
+
 	Convey("A cluster is started", t, func() {
 		Convey("Members are retrieved", func() {
 			for _, i := range mgtPorts {
@@ -168,6 +174,7 @@ func TestTribeTaskAgreements(t *testing.T) {
 				So(len(m.Body.(*rbody.TribeMemberList).Members), ShouldEqual, numOfNodes)
 			}
 		})
+
 		Convey("An agreement is added", func() {
 			a := addAgreement(mgtPorts[0], aName)
 			So(a.Body, ShouldHaveSameTypeAs, new(rbody.TribeAddAgreement))
@@ -206,6 +213,7 @@ func TestTribeTaskAgreements(t *testing.T) {
 					wg.Wait()
 					So(timedOut, ShouldEqual, false)
 
+					
 					Convey("Plugins and a task are uploaded", func() {
 						resp := uploadPlugin(MOCK_PLUGIN_PATH2, mgtPorts[0])
 						So(resp.Meta.Code, ShouldEqual, 201)
@@ -213,7 +221,7 @@ func TestTribeTaskAgreements(t *testing.T) {
 						resp = getPluginList(mgtPorts[0])
 						So(resp.Meta.Code, ShouldEqual, 200)
 						So(len(resp.Body.(*rbody.PluginList).LoadedPlugins), ShouldEqual, 1)
-						pluginToUnload := resp.Body.(*rbody.PluginList).LoadedPlugins[0]
+						//pluginToUnload := resp.Body.(*rbody.PluginList).LoadedPlugins[0]
 						<-lpe.pluginAddEvent
 						resp = getAgreement(mgtPorts[0], aName)
 						So(resp.Meta.Code, ShouldEqual, 200)
@@ -252,8 +260,8 @@ func TestTribeTaskAgreements(t *testing.T) {
 							So(resp.Meta.Code, ShouldEqual, 201)
 							So(resp.Meta.Type, ShouldEqual, rbody.AddScheduledTaskType)
 							So(resp.Body, ShouldHaveSameTypeAs, new(rbody.AddScheduledTask))
-							taskID := resp.Body.(*rbody.AddScheduledTask).ID
-
+							//taskID := resp.Body.(*rbody.AddScheduledTask).ID
+/*
 							Convey("The cluster agrees on tasks", func(c C) {
 								var wg sync.WaitGroup
 								timedOut := false
@@ -454,13 +462,18 @@ func TestTribeTaskAgreements(t *testing.T) {
 									})
 								})
 							})
+*/
 						})
 					})
+					
 				})
 			})
 		})
+
 	})
 }
+
+
 
 func TestTribePluginAgreements(t *testing.T) {
 	var (
