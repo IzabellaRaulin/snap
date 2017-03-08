@@ -58,12 +58,15 @@ func (c *Client) CreateTask(s *Schedule, wf *wmap.WorkflowMap, name string, dead
 			Interval:       s.Interval,
 			StartTimestamp: s.StartTimestamp,
 			StopTimestamp:  s.StopTimestamp,
+			Count: 		s.Count,
 		},
 		Workflow:    wf,
 		Start:       startTask,
 		MaxFailures: maxFailures,
 	}
-
+	if s.Count == 0 {
+		panic("Iza-4 client/task.go cannot create task")
+	}
 	if name != "" {
 		t.Name = name
 	}

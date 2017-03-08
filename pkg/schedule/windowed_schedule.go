@@ -22,25 +22,28 @@ type WindowedSchedule struct {
 // NewWindowedSchedule returns an instance of WindowedSchedule given duration,
 // start and stop time
 func NewWindowedSchedule(i time.Duration, start *time.Time, stop *time.Time, count uint) *WindowedSchedule {
-	count = uint(1)
 	if count != 0 {
-
-		if stop != nil {
-			//give here some err
-		} else {
-			if start != nil {
-				newStop := start.Add(10*i)
-				stop = &newStop
-				fmt.Println("\n\n Debug iza - new stopA=%v\n", newStop)
-			} else{
-				newStop := time.Now().Add(10*i)
-				stop = &newStop
-				fmt.Println("\n\n Debug iza - new stopB=%v\n", newStop)
+		// if stop is not set, determine the window stop based on the `count` and `interval`
+		if stop == nil {
+			// if start is not set, use current time
+			if start == nil {
+				// execution starts immediately
+				now := time.Now()
+				start = &now
 			}
-			fmt.Println("\n\n Debug iza - stop=%v\n", stop)
+			newStop := start.Add(time.Duration(count)*i)
+			stop = &newStop
+			fmt.Println("\n\n Debug iza - new stopB=%v\n", newStop)
+
+		} else {
+			// if stop and count were both defined, log about ignoring the `count`
+			logger.WithFields(log.Fields{
+				"_block":        "NewWindowedSchedule",
+			}).Error("Specifying both the window stop and count is not allowed. Ignoring the count param.")
 		}
+
 	} else {
-		panic("Iza")
+		panic("Iza2")
 	}
 
 	logger.WithFields(log.Fields{
@@ -55,12 +58,14 @@ func NewWindowedSchedule(i time.Duration, start *time.Time, stop *time.Time, cou
 	}
 }
 
+//todo iza - provide count for simple schedule
 // NewSimpleSchedule returns an instance of WindowedSchedule without determined start and stop time
-func NewSimpleSchedule(i time.Duration) *WindowedSchedule {
+func NewSimpleSchedule(i time.Duration, count uint) *WindowedSchedule {
 	return &WindowedSchedule{
 		Interval:  i,
 		StartTime: nil,
 		StopTime:  nil,
+
 	}
 }
 

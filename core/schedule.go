@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/intelsdi-x/snap/pkg/schedule"
+	"fmt"
 )
 
 type Schedule struct {
@@ -60,6 +61,11 @@ func makeSchedule(s Schedule) (schedule.Schedule, error) {
 		d, err := time.ParseDuration(s.Interval)
 		if err != nil {
 			return nil, err
+		}
+
+		fmt.Println("\n\nDebug, Iza - make schedule - s.Count=%v\n", s.Count)
+		if s.Count == uint(0) {
+			panic("Iza")
 		}
 
 		sch := schedule.NewWindowedSchedule(
