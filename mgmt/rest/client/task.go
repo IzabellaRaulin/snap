@@ -42,7 +42,8 @@ type Schedule struct {
 	StartTimestamp *time.Time `json:"start_timestamp,omitempty"`
 	// StopTimestamp specifies the end time.
 	StopTimestamp *time.Time `json:"stop_timestamp,omitempty"`
-	// Count
+	// Count specifies the number of expected runs (defaults to 0 what means no limit, set to 1 means single run task).
+	// Count is supported by "simple" and "windowed" schedule
 	Count uint `json:"count,omitempty"`
 }
 
