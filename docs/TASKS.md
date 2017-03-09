@@ -12,7 +12,7 @@ A task can be in the following states:
 - **running:** a running task
 - **stopped:** a task that is not running
 - **disabled:** a task in a state not allowed to start. This happens when the task produces consecutive errors. A disabled task must be re-enabled before it can be started again. 
-- **ended:** a task for which the schedule is ended. It happens for schedule with defined _stop_timestamp_ or if the _count_ of runs has been specified. An ended task is resumable if the schedule is still valid.
+- **ended:** a task for which the schedule is ended. It happens for schedule with defined _stop_timestamp_ or with specified the _count_ of runs. An ended task is resumable if the schedule is still valid.
 
 ![statediagram](https://cloud.githubusercontent.com/assets/11335874/23774722/62526aaa-0525-11e7-9ce8-894a8e2cbdf1.png)
 
