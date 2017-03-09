@@ -51,7 +51,7 @@ The header contains a version, used to differentiate between versions of the tas
 The schedule describes the schedule type and interval for running the task. At the time of this writing, Snap has three schedules:    
 
 - **simple schedule** 
-    - a simple "run forever" schedule, which is what we see above as `"simple"`: 
+  - a simple "run forever" schedule, which is what we see above as `"simple"`: 
 ```json
         "version": 1,
         "schedule": {
@@ -60,8 +60,8 @@ The schedule describes the schedule type and interval for running the task. At t
         },
         "max-failures": 10,
 ```
-
-  - or simple "run X times" schedule:
+   
+   - or simple "run X times" schedule:
         
 ```json
         "version": 1,
@@ -77,7 +77,7 @@ You can expect that your task will finish in time equals to _count_ multiplied b
     
     
 - **window schedule** which adds a start and/or stop time for the task. The time must be given as a quoted string in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format, for example with specific time zone offset:
-  - a regular window with determined start and stop time
+  - a regular window with determined both start and stop time
 ```json
     "version": 1,
     "schedule": {
@@ -89,7 +89,7 @@ You can expect that your task will finish in time equals to _count_ multiplied b
     "max-failures": 10,
 ```
 
-  - start schedule on _start_timestamp_ and "run forever"
+  - start schedule on _start_timestamp_ and "run forever"  
     (a window with determined only stop time)
 ```json
     "version": 1,
@@ -101,8 +101,8 @@ You can expect that your task will finish in time equals to _count_ multiplied b
     "max-failures": 10,
 ```
 
-  - start schedule immediately and finish on _stop time_
-   (a window with determined only start time)
+  - start schedule immediately and finish on _stop time_  
+   (a window with determined only start time) 
 ```json
     "version": 1,
     "schedule": {
@@ -113,8 +113,8 @@ You can expect that your task will finish in time equals to _count_ multiplied b
     "max-failures": 10,
 ```
     
-  - start schedule on _start time_ and run "X times"
-    (a window with determined the start time and the count)
+  - start schedule on _start time_ and run "X times"  
+    (a window with determined start time and count)
 ```json
     "version": 1,
     "schedule": {
