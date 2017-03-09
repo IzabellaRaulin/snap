@@ -51,92 +51,91 @@ The header contains a version, used to differentiate between versions of the tas
 The schedule describes the schedule type and interval for running the task. At the time of this writing, Snap has three schedules:    
 
 - **simple schedule** 
-  - a simple "run forever" schedule, which is what we see above as `"simple"`: 
-```json
-        "version": 1,
-        "schedule": {
-            "type": "simple",
-            "interval": "1s"
-        },
-        "max-failures": 10,
-```
+  - a simple "run forever" schedule: 
+  ```json
+  	"version": 1,
+	"schedule": {
+		"type": "simple",
+		"interval": "1s"
+	},
+	"max-failures": 10,
+  ```
    
-   - or simple "run X times" schedule:
-        
-```json
-        "version": 1,
-        "schedule": {
-            "type": "simple",
-            "interval": "1s",
-            "count": 1
-        },
-        "max-failures": 1,
-```
+   - or simple "run X times" schedule:        
+  ```json
+	"version": 1,
+	"schedule": {
+		"type": "simple",
+		"interval": "1s",
+		"count": 1
+	},
+	"max-failures": 1,
+  ```
 Set `count` to 1 to define _single run task_.   
 You can expect that your task will finish in time equals to _count_ multiplied by _interval_.
     
     
-- **window schedule** which adds a start and/or stop time for the task. The time must be given as a quoted string in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format, for example with specific time zone offset:
-  - a regular window with determined both start and stop time
-```json
-    "version": 1,
-    "schedule": {
-        "type": "windowed",
-        "interval": "1s",
-        "start_timestamp": "2016-10-27T16:00:00+01:00",
-        "stop_timestamp": "2016-10-28T16:30:00+01:00"
-    },
-    "max-failures": 10,
-```
+- **window schedule** which adds a start and/or stop time for the task. The time must be given as a quoted string in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format, for example with specific time zone offset
+  - a regular window with determined both start and stop time:
+  ```json
+	"version": 1,
+	"schedule": {
+		"type": "windowed",
+		"interval": "1s",
+		"start_timestamp": "2016-10-27T16:00:00+01:00",
+		"stop_timestamp": "2016-10-28T16:30:00+01:00"
+	    },
+	"max-failures": 10,
+  ```
 
-  - start schedule on _start_timestamp_ and "run forever"  
+  - start schedule on _start_timestamp_ and "run forever":  
     (a window with determined only stop time)
-```json
-    "version": 1,
-    "schedule": {
-        "type": "windowed",
-        "interval": "1s",
-        "start_timestamp": "2016-10-27T16:00:00+01:00"
-    },
-    "max-failures": 10,
-```
+  ```json
+	"version": 1,
+	"schedule": {
+		"type": "windowed",
+		"interval": "1s",
+		"start_timestamp": "2016-10-27T16:00:00+01:00"
+	    },
+	"max-failures": 10,
+  ```
 
-  - start schedule immediately and finish on _stop time_  
+  - start schedule immediately and finish on _stop time_:  
    (a window with determined only start time) 
-```json
-    "version": 1,
-    "schedule": {
-        "type": "windowed",
-        "interval": "1s",
-        "stop_timestamp": "2016-10-28T16:30:00+01:00"
-    },
-    "max-failures": 10,
-```
+  ```json
+	"version": 1,
+	"schedule": {
+		"type": "windowed",
+		"interval": "1s",
+		"stop_timestamp": "2016-10-28T16:30:00+01:00"
+	    },
+	"max-failures": 10,
+  ```
     
-  - start schedule on _start time_ and run "X times"  
+  - start schedule on _start time_ and run "X times":  
     (a window with determined start time and count)
-```json
-    "version": 1,
-    "schedule": {
-        "type": "windowed",
-        "interval": "1s",
-        "start_timestamp": "2016-10-27T16:00:00+01:00",
-        "count": 1,
-    },
-    "max-failures": 1,
-```
+  ```json
+	"version": 1,
+	"schedule": {
+		"type": "windowed",
+		"interval": "1s",
+		"start_timestamp": "2016-10-27T16:00:00+01:00",
+		"count": 1
+	    },
+	"max-failures": 1,
+  ```
 
   **Notice**: Specyfing both the window _stop time_ and _count_ is not allowed. In such case, you receive a warning that the value of _count_ will be ignored. 
     
 - **cron schedule** which supports cron-like entries in ```interval``` field, like in this example (workflow will fire every hour on the half hour):
-```json
-    "version": 1,
-    "schedule": {
-        "type": "cron",
-        "interval" : "0 30 * * * *"
-    },
-    "max-failures": 10,
-```
+  ```json
+	"version": 1,
+	"schedule": {
+		"type": "cron",
+		"interval" : "0 30 * * * *"
+	},
+	"max-failures": 10,
+  ```
 More on cron expressions can be found here: https://godoc.org/github.com/robfig/cron
 
 - **others custom schedule** 
