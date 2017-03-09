@@ -241,19 +241,16 @@ func (t *task) setScheduleFromCliOptions(ctx *cli.Context) error {
 		}
 		duration = &d
 	}
-	//fmt.Println("\n\n Debug Iza - Schedule.Interval=%v\n", t.Schedule.Interval)
 	// Grab the interval for the schedule (if one was provided). Note that if an
 	// interval value was not passed in and there is no interval defined for the
 	// schedule associated with this task, it's an error
 	interval := ctx.String("interval")
-	//fmt.Println("\n\n Debug Iza - interval=%v\n", interval)
 	if !ctx.IsSet("interval") && interval == "" && t.Schedule.Interval == "" {
 		return fmt.Errorf("Usage error (missing interval value); when constructing a new task schedule an interval must be provided")
 	}
 
 	countValStr := ctx.String("count")
 	if ctx.IsSet("count") || countValStr != "" {
-		//fmt.Println("\n\nDebug iza -setting count=%\n", countValStr)
 		if count, err := stringValToUint(countValStr); err == nil {
 			t.Schedule.Count = count
 		}
@@ -364,8 +361,6 @@ func createTaskUsingTaskManifest(ctx *cli.Context) error {
 		return fmt.Errorf("Unsupported file type %s\n", ext)
 	}
 
-	//fmt.Println("\n\nDebug Iza- createUsingTask manifest, after unmarshall interval=%v\n", t.Schedule.Interval)
-	//fmt.Println("\n\nDebug Iza- createUsingTask manifest, after unmarshall count=%v\n", t.Schedule.Count)
 	// Validate task manifest includes schedule, workflow, and version
 	if err := validateTask(t); err != nil {
 		return err

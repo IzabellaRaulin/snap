@@ -1,4 +1,4 @@
-// +build medium legacyiza
+// +build medium
 
 /*
 http://www.apache.org/licenses/LICENSE-2.0.txt
@@ -205,7 +205,7 @@ func createTask(sample, name, interval string, noStart bool, port int) *rbody.AP
 	uri := fmt.Sprintf("http://localhost:%d/v1/tasks", port)
 
 	t := core.TaskCreationRequest{
-		Schedule: &core.Schedule{Type: "simple", Interval: interval},
+		Schedule: &core.Schedule{Type: "simple", Interval: interval, StartTimestamp: nil, StopTimestamp: nil, Count: 0},
 		Workflow: wf,
 		Name:     name,
 		Start:    !noStart,

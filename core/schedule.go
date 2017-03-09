@@ -35,11 +35,15 @@ type Schedule struct {
 	Count          uint       `json:"count,omitempty"`
 }
 
+var (
+	ErrMissingScheduleInterval = errors.New("missing `interval` in configuration of schedule")
+)
+
 func makeSchedule(s Schedule) (schedule.Schedule, error) {
 	switch s.Type {
 	case "simple", "windowed":
 		if s.Interval == "" {
-			return nil, fmt.Errorf("missing `interval` in configuration of %s schedule", s.Type)
+			return nil, ErrMissingScheduleInterval
 		}
 
 		d, err := time.ParseDuration(s.Interval)
@@ -61,7 +65,7 @@ func makeSchedule(s Schedule) (schedule.Schedule, error) {
 		return sch, nil
 	case "cron":
 		if s.Interval == "" {
-			return nil, errors.New("missing `interval` in configuration of cron schedule")
+			return nil, ErrMissingScheduleInterval
 		}
 		sch := schedule.NewCronSchedule(s.Interval)
 
@@ -73,6 +77,6 @@ func makeSchedule(s Schedule) (schedule.Schedule, error) {
 	case "streaming":
 		return schedule.NewStreamingSchedule(), nil
 	default:
-		return nil, errors.New("unknown schedule type " + s.Type)
+		return nil, fmt.Errorf("unknown schedule type `%s`", s.Type)
 	}
 }

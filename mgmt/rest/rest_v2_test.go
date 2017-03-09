@@ -1,4 +1,4 @@
-// +build medium legacyiza
+// +build medium
 
 /*
 http://www.apache.org/licenses/LICENSE-2.0.txt
@@ -325,7 +325,7 @@ func TestV2Task(t *testing.T) {
 				string(body),
 				ShouldResemble,
 				fmt.Sprintf(mock.GET_TASK_RESPONSE, r.port),
-				)
+			)
 		})
 
 		Convey("Watch tasks - v2/tasks/:id/watch", func() {

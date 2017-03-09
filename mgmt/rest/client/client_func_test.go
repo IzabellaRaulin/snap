@@ -417,7 +417,7 @@ func TestSnapClient(t *testing.T) {
 					Convey("start time is not set", func() {
 						stopTime := time.Now().Add(2 * time.Minute)
 						correctSchedule := &Schedule{Type: "windowed", Interval: "1s",
-							StopTimestamp:  &stopTime}
+							StopTimestamp: &stopTime}
 						tt := c.CreateTask(correctSchedule, wf, "baron", "", true, 0)
 						So(tt.Err, ShouldBeNil)
 						So(tt.State, ShouldEqual, "Running")

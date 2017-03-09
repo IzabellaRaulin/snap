@@ -40,7 +40,7 @@ func TestMakeSchedule(t *testing.T) {
 		rsched, err := makeSchedule(*sched1)
 		So(rsched, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldEqual, fmt.Sprintf("unknown schedule type %s", DUMMY_TYPE))
+		So(err.Error(), ShouldEqual, fmt.Sprintf("unknown schedule type `%s`", DUMMY_TYPE))
 	})
 
 	Convey("Simple schedule with missing interval in configuration", t, func() {
@@ -48,7 +48,7 @@ func TestMakeSchedule(t *testing.T) {
 		rsched, err := makeSchedule(*sched1)
 		So(rsched, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldEqual, "missing `interval` in configuration of simple schedule")
+		So(err, ShouldEqual, ErrMissingScheduleInterval)
 	})
 
 	Convey("Simple schedule with bad duration", t, func() {
@@ -80,7 +80,7 @@ func TestMakeSchedule(t *testing.T) {
 		rsched, err := makeSchedule(*sched1)
 		So(rsched, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldStartWith, "missing `interval` in configuration of windowed schedule")
+		So(err, ShouldEqual, ErrMissingScheduleInterval)
 	})
 
 	Convey("Windowed schedule with bad duration", t, func() {
@@ -162,7 +162,7 @@ func TestMakeSchedule(t *testing.T) {
 		rsched, err := makeSchedule(*sched1)
 		So(rsched, ShouldBeNil)
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldEqual, "missing `interval` in configuration of cron schedule")
+		So(err, ShouldEqual, ErrMissingScheduleInterval)
 	})
 
 	Convey("Cron schedule with invalid duration", t, func() {

@@ -32,24 +32,13 @@ func NewWindowedSchedule(i time.Duration, start *time.Time, stop *time.Time, cou
 			}
 			newStop := start.Add(time.Duration(count) * i)
 			stop = &newStop
-			//fmt.Println("\n\n Debug iza - new stopB=%v\n", newStop)
-
 		} else {
 			// if stop and count were both defined, log about ignoring the `count`
 			logger.WithFields(log.Fields{
 				"_block": "NewWindowedSchedule",
 			}).Error("Specifying both the window stop and count is not allowed. Ignoring the count param.")
 		}
-
-	} else {
-		//panic("Iza2")
 	}
-
-	logger.WithFields(log.Fields{
-		"_block":    "windowed-wait",
-		"stop-time": stop,
-	}).Debug("Iza - Creating window swith top time ")
-
 	return &WindowedSchedule{
 		Interval:  i,
 		StartTime: start,
@@ -109,10 +98,6 @@ func (w *WindowedSchedule) Wait(last time.Time) Response {
 
 	// Do we even have a stop time?
 	if w.StopTime != nil {
-		logger.WithFields(log.Fields{
-			"_block":    "windowed-wait",
-			"stop-time": w.StopTime,
-		}).Debug("Iza - Window stop time is defined")
 		if time.Now().Before((*w.StopTime)) {
 			logger.WithFields(log.Fields{
 				"_block":           "windowed-wait",
@@ -126,25 +111,18 @@ func (w *WindowedSchedule) Wait(last time.Time) Response {
 			m, _ = waitOnInterval(last, w.Interval)
 
 			if time.Now().After(*w.StopTime) {
-				logger.WithFields(log.Fields{
-					"_block": "windowed-wait",
-				}).Debug("Debug Iza!!!! Schedule is Ended2")
 				w.state = Ended
 				m = 0
 			}
 		} else {
 			logger.WithFields(log.Fields{
 				"_block": "windowed-wait",
-			}).Debug("Debug Iza!!!! Schedule is Ended")
+			}).Debug("schedule is ended")
 			w.state = Ended
 			m = 0
 		}
 
 	} else {
-		logger.WithFields(log.Fields{
-			"_block":    "windowed-wait",
-			"stop-time": 0,
-		}).Debug("Iza - Window stop time is not defined")
 		logger.WithFields(log.Fields{
 			"_block":   "windowed-wait",
 			"last":     last,
