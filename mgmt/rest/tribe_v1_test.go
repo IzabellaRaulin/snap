@@ -168,7 +168,6 @@ func TestTribeTaskAgreements(t *testing.T) {
 				So(len(m.Body.(*rbody.TribeMemberList).Members), ShouldEqual, numOfNodes)
 			}
 		})
-
 		Convey("An agreement is added", func() {
 			a := addAgreement(mgtPorts[0], aName)
 			So(a.Body, ShouldHaveSameTypeAs, new(rbody.TribeAddAgreement))
@@ -455,14 +454,11 @@ func TestTribeTaskAgreements(t *testing.T) {
 									})
 								})
 							})
-
 						})
 					})
-
 				})
 			})
 		})
-
 	})
 }
 

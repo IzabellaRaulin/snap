@@ -75,7 +75,7 @@ func (w *WindowedSchedule) Validate() error {
 func (w *WindowedSchedule) Wait(last time.Time) Response {
 	// If within the window we wait our interval and return
 	// otherwise we exit with a completed state.
-	var m uint
+	m := uint(0)
 
 	// Do we even have a specific start time?
 	if w.StartTime != nil {
@@ -109,19 +109,14 @@ func (w *WindowedSchedule) Wait(last time.Time) Response {
 				"interval": w.Interval,
 			}).Debug("waiting for interval")
 			m, _ = waitOnInterval(last, w.Interval)
-
-			if time.Now().After(*w.StopTime) {
-				w.state = Ended
-				m = 0
-			}
-		} else {
+		}
+		// check if the schedule is ended after waiting on interval
+		if !time.Now().Before(*w.StopTime) {
 			logger.WithFields(log.Fields{
 				"_block": "windowed-wait",
 			}).Debug("schedule is ended")
 			w.state = Ended
-			m = 0
 		}
-
 	} else {
 		logger.WithFields(log.Fields{
 			"_block":   "windowed-wait",

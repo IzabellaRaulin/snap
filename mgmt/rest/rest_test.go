@@ -32,7 +32,7 @@ import (
 	"github.com/intelsdi-x/snap/scheduler"
 )
 
-// common ressources used for medium tests
+// common resources used for medium tests
 
 var (
 	// Switching this turns on logging for all the REST API calls
@@ -87,6 +87,5 @@ func readBody(r *http.Response) []byte {
 		log.Fatal(err)
 	}
 	r.Body.Close()
-
 	return b
 }

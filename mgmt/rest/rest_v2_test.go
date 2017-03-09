@@ -308,9 +308,10 @@ func TestV2Task(t *testing.T) {
 			// GetTasks returns an unordered map,
 			// thus there is more than one possible response
 			So(
-				responses,
-				ShouldContain,
-				string(body))
+				string(body),
+				ShouldBeIn,
+				responses
+			)
 		})
 
 		Convey("Get task - v2/tasks/:id", func() {

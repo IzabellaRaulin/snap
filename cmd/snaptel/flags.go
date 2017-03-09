@@ -122,7 +122,7 @@ var (
 	}
 	flTaskSchedCount = cli.StringFlag{
 		Name:  "count",
-		Usage: "The count of runs for the task schedule [defaults to 0 what means not limit, e.g. set to 1 determines a single run task]",
+		Usage: "The count of runs for the task schedule [defaults to 0 what means no limit, e.g. set to 1 determines a single run task]",
 	}
 	flTaskSchedDuration = cli.StringFlag{
 		Name:  "duration, d",

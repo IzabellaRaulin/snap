@@ -1021,7 +1021,6 @@ func TestV1Tribe(t *testing.T) {
 				ShouldResemble,
 				fmt.Sprintf(fixtures.GET_TRIBE_AGREEMENTS_RESPONSE),
 			)
-
 		})
 
 		Convey("Add tribe agreements - /v1/tribe/agreements", func() {
@@ -1039,7 +1038,6 @@ func TestV1Tribe(t *testing.T) {
 				ShouldResemble,
 				fmt.Sprintf(fixtures.ADD_TRIBE_AGREEMENT_RESPONSE),
 			)
-
 		})
 
 		Convey("Get tribe agreements - v1/tribe/agreements/:name", func() {
