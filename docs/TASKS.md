@@ -72,11 +72,12 @@ The schedule describes the schedule type and interval for running the task. At t
         },
         "max-failures": 1,
 ```
-Set `count` to 1 to define _single run task_. You can expect that your task will finish in time equals `count` multiply by `interval`.
+Set `count` to 1 to define _single run task_.   
+You can expect that your task will finish in time equals to _count_ multiplied by _interval_.
     
     
 - **window schedule** which adds a start and/or stop time for the task. The time must be given as a quoted string in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format, for example with specific time zone offset:
- - a regular window with determined start and stop time
+  - a regular window with determined start and stop time
 ```json
     "version": 1,
     "schedule": {
@@ -88,7 +89,7 @@ Set `count` to 1 to define _single run task_. You can expect that your task will
     "max-failures": 10,
 ```
 
- - start schedule on _start_timestamp_ and "run forever"
+  - start schedule on _start_timestamp_ and "run forever"
     (a window with determined only stop time)
 ```json
     "version": 1,
@@ -124,6 +125,7 @@ Set `count` to 1 to define _single run task_. You can expect that your task will
     },
     "max-failures": 1,
 ```
+
   **Notice**: Specyfing both the window _stop time_ and _count_ is not allowed. In such case, you receive a warning that the value of _count_ will be ignored. 
     
 - **cron schedule** which supports cron-like entries in ```interval``` field, like in this example (workflow will fire every hour on the half hour):
