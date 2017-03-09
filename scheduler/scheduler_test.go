@@ -214,7 +214,6 @@ func TestScheduler(t *testing.T) {
 			So(err.Errors()[0], ShouldResemble, serror.New(errors.New("metric validation error")))
 
 		})
-
 		Convey("returns an error when scheduler started and MetricManager is not set", func() {
 			s1 := New(GetDefaultConfig())
 			err := s1.Start()
@@ -223,8 +222,6 @@ func TestScheduler(t *testing.T) {
 			So(err, ShouldResemble, ErrMetricManagerNotSet)
 
 		})
-
-		// TODO NICK
 		Convey("returns an error when a schedule does not validate", func() {
 			s1 := New(GetDefaultConfig())
 			s1.Start()
@@ -239,8 +236,6 @@ func TestScheduler(t *testing.T) {
 			So(err1.Errors()[0].Error(), ShouldResemble, "Interval must be greater than 0")
 
 		})
-
-		// 		// TODO NICK
 		Convey("create a task", func() {
 			sch := schedule.NewWindowedSchedule(time.Second*5, nil, nil, 0)
 			tsk, err := s.CreateTask(sch, w, false)
@@ -269,8 +264,6 @@ func TestScheduler(t *testing.T) {
 				So(err[0].Error(), ShouldEqual, "Task is already stopped.")
 			})
 		})
-
-		// 		// // TODO NICK
 		Convey("returns a task with a 6 second deadline duration", func() {
 			sch := schedule.NewWindowedSchedule(6*time.Second, nil, nil, 0)
 			tsk, err := s.CreateTask(sch, w, false, core.TaskDeadlineDuration(6*time.Second))

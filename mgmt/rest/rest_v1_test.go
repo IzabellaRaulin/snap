@@ -205,7 +205,7 @@ func createTask(sample, name, interval string, noStart bool, port int) *rbody.AP
 	uri := fmt.Sprintf("http://localhost:%d/v1/tasks", port)
 
 	t := core.TaskCreationRequest{
-		Schedule: &core.Schedule{Type: "simple", Interval: interval, StartTimestamp: nil, StopTimestamp: nil, Count: 0},
+		Schedule: &core.Schedule{Type: "simple", Interval: interval},
 		Workflow: wf,
 		Name:     name,
 		Start:    !noStart,
@@ -1053,7 +1053,6 @@ func TestV1Tribe(t *testing.T) {
 				ShouldResemble,
 				fmt.Sprintf(fixtures.GET_TRIBE_AGREEMENTS_RESPONSE_NAME),
 			)
-
 		})
 
 		Convey("Get tribe members - v1/tribe/members", func() {
@@ -1068,7 +1067,6 @@ func TestV1Tribe(t *testing.T) {
 				ShouldResemble,
 				fmt.Sprintf(fixtures.GET_TRIBE_MEMBERS_RESPONSE),
 			)
-
 		})
 
 		Convey("Get tribe member - v1/tribe/member/:name", func() {
@@ -1084,7 +1082,6 @@ func TestV1Tribe(t *testing.T) {
 				ShouldResemble,
 				fmt.Sprintf(fixtures.GET_TRIBE_MEMBER_NAME),
 			)
-
 		})
 
 		Convey("Delete tribe agreement - v1/tribe/agreements/:name", func() {
@@ -1135,7 +1132,6 @@ func TestV1Tribe(t *testing.T) {
 				ShouldResemble,
 				fmt.Sprintf(fixtures.LEAVE_TRIBE_AGREEMENT_RESPONSE_NAME_LEAVE),
 			)
-
 		})
 
 		Convey("Join tribe agreement - v1/tribe/agreements/:name/join", func() {

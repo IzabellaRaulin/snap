@@ -310,7 +310,7 @@ func TestV2Task(t *testing.T) {
 			So(
 				string(body),
 				ShouldBeIn,
-				responses
+				responses,
 			)
 		})
 

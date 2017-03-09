@@ -98,7 +98,7 @@ func (w *WindowedSchedule) Wait(last time.Time) Response {
 
 	// Do we even have a stop time?
 	if w.StopTime != nil {
-		if time.Now().Before((*w.StopTime)) {
+		if time.Now().Before(*w.StopTime) {
 			logger.WithFields(log.Fields{
 				"_block":           "windowed-wait",
 				"time-before-stop": w.StopTime.Sub(time.Now()),
@@ -110,7 +110,7 @@ func (w *WindowedSchedule) Wait(last time.Time) Response {
 			}).Debug("waiting for interval")
 			m, _ = waitOnInterval(last, w.Interval)
 		}
-		// check if the schedule is ended after waiting on interval
+		// check if the schedule is ended (also after waiting on interval)
 		if !time.Now().Before(*w.StopTime) {
 			logger.WithFields(log.Fields{
 				"_block": "windowed-wait",
