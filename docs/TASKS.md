@@ -61,7 +61,7 @@ The schedule describes the schedule type and interval for running the task. At t
         "max-failures": 10,
 ```
 
-    - or simple "run X times" schedule:
+  - or simple "run X times" schedule:
         
 ```json
         "version": 1,
