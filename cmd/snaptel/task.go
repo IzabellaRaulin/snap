@@ -641,6 +641,8 @@ func stopTask(ctx *cli.Context) error {
 		return newUsageError("Incorrect usage", ctx)
 	}
 
+	//todo Rashmi here you need to get the value of graceful flag an pass it further
+	// exactly in the same way how it's done for id
 	id := ctx.Args().First()
 	r := pClient.StopTask(id)
 	if r.Err != nil {

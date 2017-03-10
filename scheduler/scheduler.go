@@ -554,6 +554,7 @@ func (s *scheduler) StopTaskTribe(id string) []serror.SnapError {
 }
 
 func (s *scheduler) stopTask(id, source string) []serror.SnapError {
+	// todo Rashmi look on that, in stopTask you need task id and also the value of the flag "graceful"
 	logger := schedulerLogger.WithFields(log.Fields{
 		"_block": "stop-task",
 		"source": source,
@@ -595,6 +596,8 @@ func (s *scheduler) stopTask(id, source string) []serror.SnapError {
 			serror.New(ErrTaskDisabledNotStoppable),
 		}
 	default:
+		// todo Rashmi look on that
+
 		// Group dependencies by the host they live on and
 		// unsubscribe them since task is stopping.
 		depGroups := getWorkflowPlugins(t.workflow.processNodes, t.workflow.publishNodes, t.workflow.metrics)
@@ -618,6 +621,9 @@ func (s *scheduler) stopTask(id, source string) []serror.SnapError {
 				Source: source,
 			}
 			defer s.eventManager.Emit(event)
+
+			// todo Rashmi look on that, probably you need to pass the value of graceful flag
+			// to task.Stop()
 			t.Stop()
 			logger.WithFields(log.Fields{
 				"task-id":    t.ID(),
@@ -725,6 +731,7 @@ func (s *scheduler) Start() error {
 }
 
 func (s *scheduler) Stop() {
+	// todo Rashmi, fyi changing the state "Stopping" to "Stopped" takes place here
 	s.state = schedulerStopped
 	// stop all tasks that are not already stopped
 	for _, t := range s.tasks.table {

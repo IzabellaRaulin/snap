@@ -138,6 +138,8 @@ var (
 		Name:  "max-failures",
 		Usage: "The number of consecutive failures before Snap disables the task",
 	}
+	//todo Rashmi add a flag (bool) with name, description;
+	//after adding flag here, you can use it in commands.go
 
 	// metric
 	flMetricVersion = cli.IntFlag{

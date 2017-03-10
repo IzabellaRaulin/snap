@@ -69,6 +69,7 @@ var (
 					Name:   "stop",
 					Usage:  "stop <task_id>",
 					Action: stopTask,
+					//todo Rashmi - add a flag to stop action
 				},
 				{
 					Name:   "remove",

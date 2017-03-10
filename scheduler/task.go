@@ -66,6 +66,7 @@ type task struct {
 	id                 string
 	name               string
 	schResponseChan    chan schedule.Response
+	// todo Rashmi look on that (definition of kill chan)
 	killChan           chan struct{}
 	schedule           schedule.Schedule
 	workflow           *schedulerWorkflow
@@ -242,6 +243,7 @@ func (t *task) Spin() {
 	// if this task is a streaming task
 	if t.isStream {
 		t.state = core.TaskSpinning
+		// todo Rashmi look on that
 		t.killChan = make(chan struct{})
 		go t.stream()
 		return
@@ -256,6 +258,7 @@ func (t *task) Spin() {
 
 	if t.state == core.TaskStopped {
 		t.state = core.TaskSpinning
+		// todo Rashmi look on that, making a kill channel
 		t.killChan = make(chan struct{})
 		// spin in a goroutine
 		go t.spin()
@@ -352,6 +355,9 @@ func checkTaskFailures(t *task, consecutiveFailures int) error {
 	return nil
 }
 func (t *task) Stop() {
+	// todo Rashmi look on that, probably you need to have here
+	// the value of graceful flag to put in into killChannel
+
 	t.Lock()
 	defer t.Unlock()
 	if t.state == core.TaskFiring || t.state == core.TaskSpinning {
@@ -391,6 +397,7 @@ func (t *task) Schedule() schedule.Schedule {
 }
 
 func (t *task) spin() {
+	// todo Rashmi look on that
 	var consecutiveFailures int
 	for {
 		taskLogger.Debug("task spin loop")
@@ -459,6 +466,7 @@ func (t *task) spin() {
 
 			}
 		case <-t.killChan:
+		// todo Rashmi look on that
 			// Only here can it truly be stopped
 			t.Lock()
 			t.state = core.TaskStopped

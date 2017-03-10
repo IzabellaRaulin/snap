@@ -233,6 +233,7 @@ func (c *Client) StartTask(id string) *StartTasksResult {
 // StopTask stops a running task given a task id. It uses an HTTP PUT call.
 // The stopped task id returns if it succeeds. Otherwise, an error is returned.
 func (c *Client) StopTask(id string) *StopTasksResult {
+	//todo Rashmi, you need to take into account not only id of task, but also graceful flag
 	resp, err := c.do("PUT", fmt.Sprintf("/tasks/%v/stop", id), ContentTypeJSON)
 	if err != nil {
 		return &StopTasksResult{Err: err}
