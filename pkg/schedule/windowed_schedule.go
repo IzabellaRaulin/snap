@@ -29,7 +29,7 @@ func NewWindowedSchedule(i time.Duration, start *time.Time, stop *time.Time, cou
 		// log about ignoring the `count`
 		logger.WithFields(log.Fields{
 			"_block": "NewWindowedSchedule",
-		}).Warning("Specifying both the window stop and the count is not allowed. Ignoring the count param.")
+		}).Warning("Specifying both the window stop and the count is not allowed. The parameter `count` has been ignored.")
 	}
 
 	return &WindowedSchedule{
