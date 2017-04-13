@@ -204,22 +204,6 @@ func TestScheduler(t *testing.T) {
 		_, te := s.CreateTask(schedule.NewWindowedSchedule(time.Second, nil, nil, 0), w, false)
 		So(te.Errors(), ShouldBeEmpty)
 
-		Convey("stop task", func() {
-			t, _ := s.CreateTask(schedule.NewWindowedSchedule(time.Second, nil, nil, 0), w, false)
-			c.timeToWait = 500 * time.Millisecond
-			start := time.Now().UnixNano() / int64(time.Millisecond)
-			t.(*task).Spin()
-			So(t.State(), ShouldResemble, core.TaskSpinning)
-			time.Sleep(50 * time.Millisecond)
-			t.(*task).Stop()
-			end := time.Now().UnixNano() / int64(time.Millisecond)
-			elapsed := time.Duration(end - start)
-			So(elapsed*1e6, ShouldBeGreaterThanOrEqualTo, 500*time.Millisecond)
-			time.Sleep(50 * time.Millisecond)
-			So(t.State(), ShouldResemble, core.TaskStopped)
-			c.timeToWait = 0
-		})
-
 		Convey("returns errors when metrics do not validate", func() {
 			c.failValidatingMetrics = true
 			c.failValidatingMetricsAfter = 1
