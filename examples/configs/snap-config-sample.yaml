@@ -1,4 +1,8 @@
 ---
+# Notice:
+# This file is a config file template to present all possibile config paramaters which might be customized.
+# Before you use this config file, please adjust it to your use case
+
 # log_level for the snap daemon. Supported values are
 # 1 - Debug, 2 - Info, 3 - Warning, 4 - Error, 5 - Fatal.
 # Default value is 3.
