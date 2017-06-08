@@ -178,19 +178,19 @@ restapi:
   allowed_origins: http://127.0.0.1:88888, https://snap-telemetry.io
 
 # tribe section contains all configuration items for the tribe module
-tribe:
-  # enable controls enabling tribe for the snapteld instance. Default value is false.
-  enable: true
-
-  # bind_addr sets the IP address for tribe to bind.
-  bind_addr: 127.0.0.1
-
-  # bind_port sets the port for tribe to listen on. Default value is 6000
-  bind_port: 16000
-
-  # name sets the name to use for this snapteld instance in the tribe
-  # membership. Default value is hostname of the system.
-  name: localhost
-
-  # seed sets the snapteld instance to use as the seed for tribe communications
-  seed: 1.1.1.1:16000
+#tribe:
+#  # enable controls enabling tribe for the snapteld instance. Default value is false.
+#  enable: true
+#
+#  # bind_addr sets the IP address for tribe to bind.
+#  bind_addr: 127.0.0.1
+#
+#  # bind_port sets the port for tribe to listen on. Default value is 6000
+#  bind_port: 16000
+#
+#  # name sets the name to use for this snapteld instance in the tribe
+#  # membership. Default value is hostname of the system.
+#  name: localhost
+#
+#  # seed sets the snapteld instance to use as the seed for tribe communications
+#  seed: 1.1.1.1:16000

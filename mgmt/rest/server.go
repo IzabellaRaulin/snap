@@ -137,12 +137,12 @@ func (s *Server) BindTaskManager(t api.Tasks) {
 		apiInstance.BindTaskManager(t)
 	}
 }
-
-func (s *Server) BindTribeManager(t api.Tribe) {
-	for _, apiInstance := range s.apis {
-		apiInstance.BindTribeManager(t)
-	}
-}
+//TODO iza
+//func (s *Server) BindTribeManager(t api.Tribe) {
+//	for _, apiInstance := range s.apis {
+//		apiInstance.BindTribeManager(t)
+//	}
+//}
 
 func (s *Server) BindConfigManager(c api.Config) {
 	for _, apiInstance := range s.apis {

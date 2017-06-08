@@ -179,7 +179,10 @@ var (
 			},
 		},
 	}
+	//TODO Iza
+	/*
 	tribeWarning  = "Can only be used when tribe mode is enabled."
+
 	tribeCommands = []cli.Command{
 		{
 			Name:  "member",
@@ -235,6 +238,7 @@ var (
 			},
 		},
 	}
+	*/
 )
 
 func printFields(tw *tabwriter.Writer, indent bool, width int, fields ...interface{}) {

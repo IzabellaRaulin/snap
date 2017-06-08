@@ -304,7 +304,7 @@ func (s *apiV2) BindTaskManager(taskManager api.Tasks) {
 	s.taskManager = taskManager
 }
 
-func (s *apiV2) BindTribeManager(tribeManager api.Tribe) {}
+//func (s *apiV2) BindTribeManager(tribeManager api.Tribe) {}
 
 func (s *apiV2) BindConfigManager(configManager api.Config) {
 	s.configManager = configManager

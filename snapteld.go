@@ -40,10 +40,12 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/intelsdi-x/snap/control"
-	"github.com/intelsdi-x/snap/core/serror"
+	//TODO Iza
+	//"github.com/intelsdi-x/snap/core/serror"
 	"github.com/intelsdi-x/snap/mgmt/rest"
-	"github.com/intelsdi-x/snap/mgmt/tribe"
-	"github.com/intelsdi-x/snap/mgmt/tribe/agreement"
+	//todo iza
+	//"github.com/intelsdi-x/snap/mgmt/tribe"
+	//"github.com/intelsdi-x/snap/mgmt/tribe/agreement"
 	"github.com/intelsdi-x/snap/pkg/cfgfile"
 	"github.com/intelsdi-x/snap/scheduler"
 	"google.golang.org/grpc/grpclog"
@@ -130,9 +132,58 @@ type Config struct {
 	Control     *control.Config   `json:"control,omitempty"yaml:"control,omitempty"`
 	Scheduler   *scheduler.Config `json:"scheduler,omitempty"yaml:"scheduler,omitempty"`
 	RestAPI     *rest.Config      `json:"restapi,omitempty"yaml:"restapi,omitempty"`
-	Tribe       *tribe.Config     `json:"tribe,omitempty"yaml:"tribe,omitempty"`
+	//TODO Iza
+	//Tribe       *tribe.Config     `json:"tribe,omitempty"yaml:"tribe,omitempty"`
 }
 
+
+const (
+
+	CONFIG_CONSTRAINTS = `{
+		"$schema": "http://json-schema.org/draft-04/schema#",
+		"title": "snapteld global config schema",
+		"type": ["object", "null"],
+		"properties": {
+			"log_level": {
+				"description": "log verbosity level for snapteld. Range between 1: debug, 2: info, 3: warning, 4: error, 5: fatal",
+				"type": "integer",
+				"minimum": 1,
+				"maximum": 5
+			},
+			"log_path": {
+				"description": "path to log file for snapteld to use",
+				"type": "string"
+			},
+			"log_truncate": {
+				"description": "truncate log file default is false",
+				"type": "boolean"
+			},
+			"log_colors": {
+				"description": "log file colored output default is true",
+				"type": "boolean"
+			},
+			"gomaxprocs": {
+				"description": "value to be used for gomaxprocs",
+				"type": "integer",
+				"minimum": 1
+			},
+			"control": { "$ref": "#/definitions/control" },
+			"scheduler": { "$ref": "#/definitions/scheduler"},
+			"restapi" : { "$ref": "#/definitions/restapi"}
+		},
+		"additionalProperties": false,
+		"definitions": { ` +
+		control.CONFIG_CONSTRAINTS + `,` +
+		scheduler.CONFIG_CONSTRAINTS + `,` +
+		rest.CONFIG_CONSTRAINTS +
+		`}` +
+		`}`
+	logModule = "snapteld"
+)
+
+
+//todo iza - before
+/*
 const (
 	CONFIG_CONSTRAINTS = `{
 		"$schema": "http://json-schema.org/draft-04/schema#",
@@ -177,6 +228,7 @@ const (
 		`}`
 	logModule = "snapteld"
 )
+*/
 
 type coreModule interface {
 	Start() error
@@ -184,16 +236,17 @@ type coreModule interface {
 	Name() string
 }
 
-type managesTribe interface {
-	GetAgreement(name string) (*agreement.Agreement, serror.SnapError)
-	GetAgreements() map[string]*agreement.Agreement
-	AddAgreement(name string) serror.SnapError
-	RemoveAgreement(name string) serror.SnapError
-	JoinAgreement(agreementName, memberName string) serror.SnapError
-	LeaveAgreement(agreementName, memberName string) serror.SnapError
-	GetMembers() []string
-	GetMember(name string) *agreement.Member
-}
+//TODO Iza
+//type managesTribe interface {
+//	GetAgreement(name string) (*agreement.Agreement, serror.SnapError)
+//	GetAgreements() map[string]*agreement.Agreement
+//	AddAgreement(name string) serror.SnapError
+//	RemoveAgreement(name string) serror.SnapError
+//	JoinAgreement(agreementName, memberName string) serror.SnapError
+//	LeaveAgreement(agreementName, memberName string) serror.SnapError
+//	GetMembers() []string
+//	GetMember(name string) *agreement.Member
+//}
 
 type runtimeFlagsContext interface {
 	String(key string) string
@@ -224,7 +277,8 @@ func main() {
 	cliApp.Flags = append(cliApp.Flags, control.Flags...)
 	cliApp.Flags = append(cliApp.Flags, scheduler.Flags...)
 	cliApp.Flags = append(cliApp.Flags, rest.Flags...)
-	cliApp.Flags = append(cliApp.Flags, tribe.Flags...)
+	//TODO Iza
+	//cliApp.Flags = append(cliApp.Flags, tribe.Flags...)
 
 	cliApp.Action = action
 
@@ -249,7 +303,8 @@ func action(ctx *cli.Context) error {
 	// test the resulting configuration to ensure the values it contains still pass the
 	// constraints after applying the environment variables and command-line parameters;
 	// if errors are found, report them and exit with a fatal error
-	jb, _ := json.Marshal(cfg)
+	jb, err := json.Marshal(cfg)
+
 	serrs := cfgfile.ValidateSchema(CONFIG_CONSTRAINTS, string(jb))
 	if serrs != nil {
 		for _, serr := range serrs {
@@ -257,7 +312,6 @@ func action(ctx *cli.Context) error {
 		}
 		log.Fatal("Errors found after applying command-line flags")
 	}
-
 	// If logPath is set, we verify the logPath and set it so that all logging
 	// goes to the log file instead of stdout.
 	logPath := cfg.LogPath
@@ -280,7 +334,6 @@ func action(ctx *cli.Context) error {
 		defer file.Close()
 		log.SetOutput(file)
 	}
-
 	// verify the temDirPath points to existing directory
 	tempDirPath := cfg.Control.TempDirPath
 	f, err := os.Stat(tempDirPath)
@@ -324,9 +377,10 @@ func action(ctx *cli.Context) error {
 	setMaxProcs(cfg.GoMaxProcs)
 
 	c := control.New(cfg.Control)
-	if c.Config.AutoDiscoverPath != "" && c.Config.IsTLSEnabled() {
-		log.Fatal("TLS security is not supported in autodiscovery mode")
-	}
+	//todo iza
+	//if c.Config.AutoDiscoverPath != "" && c.Config.IsTLSEnabled() {
+	//	log.Fatal("TLS security is not supported in autodiscovery mode")
+	//}
 
 	coreModules = []coreModule{}
 
@@ -346,27 +400,29 @@ func action(ctx *cli.Context) error {
 		}
 		cfg.RestAPI.RestAuthPassword = string(password)
 	}
-	if cfg.Tribe.Enable && c.Config.IsTLSEnabled() {
-		log.Fatal("TLS security is not supported in tribe mode")
-	}
-	var tr managesTribe
-	if cfg.Tribe.Enable {
-		cfg.Tribe.RestAPIPort = cfg.RestAPI.Port
-		if cfg.RestAPI.RestAuth {
-			cfg.Tribe.RestAPIPassword = cfg.RestAPI.RestAuthPassword
-		}
-		log.Info("Tribe is enabled")
-		t, err := tribe.New(cfg.Tribe)
-		if err != nil {
-			printErrorAndExit(t.Name(), err)
-		}
-		c.RegisterEventHandler("tribe", t)
-		t.SetPluginCatalog(c)
-		s.RegisterEventHandler("tribe", t)
-		t.SetTaskManager(s)
-		coreModules = append(coreModules, t)
-		tr = t
-	}
+	//TODO Iza
+	//if cfg.Tribe.Enable && c.Config.IsTLSEnabled() {
+	//	log.Fatal("TLS security is not supported in tribe mode")
+	//}
+	//TODO Iza
+	//var tr managesTribe
+	//if cfg.Tribe.Enable {
+	//	cfg.Tribe.RestAPIPort = cfg.RestAPI.Port
+	//	if cfg.RestAPI.RestAuth {
+	//		cfg.Tribe.RestAPIPassword = cfg.RestAPI.RestAuthPassword
+	//	}
+	//	log.Info("Tribe is enabled")
+	//	t, err := tribe.New(cfg.Tribe)
+	//	if err != nil {
+	//		printErrorAndExit(t.Name(), err)
+	//	}
+	//	c.RegisterEventHandler("tribe", t)
+	//	t.SetPluginCatalog(c)
+	//	s.RegisterEventHandler("tribe", t)
+	//	t.SetTaskManager(s)
+	//	coreModules = append(coreModules, t)
+	//	tr = t
+	//}
 
 	//Setup RESTful API if it was enabled in the configuration
 	if cfg.RestAPI.Enable {
@@ -388,10 +444,10 @@ func action(ctx *cli.Context) error {
 				log.Warning("Using REST API authentication without HTTPS enabled.")
 			}
 		}
-
-		if tr != nil {
-			r.BindTribeManager(tr)
-		}
+		//TODO Iza
+		//if tr != nil {
+		//	r.BindTribeManager(tr)
+		//}
 		go monitorErrors(r.Err())
 		coreModules = append(coreModules, r)
 		log.Info("REST API is enabled")
@@ -557,7 +613,8 @@ func getDefaultConfig() *Config {
 		Control:     control.GetDefaultConfig(),
 		Scheduler:   scheduler.GetDefaultConfig(),
 		RestAPI:     rest.GetDefaultConfig(),
-		Tribe:       tribe.GetDefaultConfig(),
+		//TODO Iza
+		//Tribe:       tribe.GetDefaultConfig(),
 	}
 }
 
@@ -873,11 +930,13 @@ func applyCmdLineFlags(cfg *Config, ctx runtimeFlagsContext) {
 	cfg.Scheduler.WorkManagerQueueSize = setUIntVal(cfg.Scheduler.WorkManagerQueueSize, ctx, "work-manager-queue-size")
 	cfg.Scheduler.WorkManagerPoolSize = setUIntVal(cfg.Scheduler.WorkManagerPoolSize, ctx, "work-manager-pool-size")
 	// and finally for the tribe-related flags
-	cfg.Tribe.Name = setStringVal(cfg.Tribe.Name, ctx, "tribe-node-name")
-	cfg.Tribe.Enable = setBoolVal(cfg.Tribe.Enable, ctx, "tribe")
-	cfg.Tribe.BindAddr = setStringVal(cfg.Tribe.BindAddr, ctx, "tribe-addr")
-	cfg.Tribe.BindPort = setIntVal(cfg.Tribe.BindPort, ctx, "tribe-port")
-	cfg.Tribe.Seed = setStringVal(cfg.Tribe.Seed, ctx, "tribe-seed")
+
+	//TODO Iza
+	//cfg.Tribe.Name = setStringVal(cfg.Tribe.Name, ctx, "tribe-node-name")
+	//cfg.Tribe.Enable = setBoolVal(cfg.Tribe.Enable, ctx, "tribe")
+	//cfg.Tribe.BindAddr = setStringVal(cfg.Tribe.BindAddr, ctx, "tribe-addr")
+	//cfg.Tribe.BindPort = setIntVal(cfg.Tribe.BindPort, ctx, "tribe-port")
+	//cfg.Tribe.Seed = setStringVal(cfg.Tribe.Seed, ctx, "tribe-seed")
 	// check to see if we have duplicate port definitions (check the various
 	// combinations of the config file and command-line parameter values that
 	// could be used to define the port and make sure we only have one)
@@ -1016,10 +1075,11 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 			if err := json.Unmarshal(v, c.Scheduler); err != nil {
 				return err
 			}
-		case "tribe":
-			if err := json.Unmarshal(v, c.Tribe); err != nil {
-				return err
-			}
+		//TODO Iza
+		//case "tribe":
+		//	if err := json.Unmarshal(v, c.Tribe); err != nil {
+		//		return err
+		//	}
 		default:
 			return fmt.Errorf("Unrecognized key '%v' in global config file", k)
 		}

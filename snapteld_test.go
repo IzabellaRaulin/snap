@@ -102,13 +102,14 @@ var validCmdlineFlags_expected = &Config{
 		Pprof:            true,
 		Corsd:            "140.141.142.143",
 	},
-	Tribe: &tribe.Config{
-		Name:     "bonk",
-		Enable:   true,
-		BindAddr: "160.161.162.163",
-		BindPort: 16400,
-		Seed:     "180.181.182.183",
-	},
+	//TODO Iza
+	//Tribe: &tribe.Config{
+	//	Name:     "bonk",
+	//	Enable:   true,
+	//	BindAddr: "160.161.162.163",
+	//	BindPort: 16400,
+	//	Seed:     "180.181.182.183",
+	//},
 	Scheduler: &scheduler.Config{
 		WorkManagerQueueSize: 70,
 		WorkManagerPoolSize:  71,
@@ -382,14 +383,16 @@ func Test_applyCmdLineFlags(t *testing.T) {
 		gotConfig := Config{
 			Control:   &control.Config{},
 			RestAPI:   &rest.Config{},
-			Tribe:     &tribe.Config{},
+			//TODO Iza
+			//Tribe:     &tribe.Config{},
 			Scheduler: &scheduler.Config{},
 		}
 		applyCmdLineFlags(&gotConfig, validCmdlineFlags_input)
 		Convey("config should be filled with correct values", func() {
 			So(*gotConfig.Control, ShouldResemble, *validCmdlineFlags_expected.Control)
 			So(*gotConfig.RestAPI, ShouldResemble, *validCmdlineFlags_expected.RestAPI)
-			So(*gotConfig.Tribe, ShouldResemble, *validCmdlineFlags_expected.Tribe)
+			//TODO Iza
+			//So(*gotConfig.Tribe, ShouldResemble, *validCmdlineFlags_expected.Tribe)
 			So(*gotConfig.Scheduler, ShouldResemble, *validCmdlineFlags_expected.Scheduler)
 			So(gotConfig, ShouldResemble, *validCmdlineFlags_expected)
 		})

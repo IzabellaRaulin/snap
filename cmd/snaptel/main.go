@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strings"
+	//"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh/terminal"
@@ -62,7 +62,10 @@ func main() {
 	app.Version = gitversion
 	app.Usage = "The open telemetry framework"
 	app.Flags = []cli.Flag{flURL, flSecure, flAPIVer, flPassword, flConfig, flTimeout}
-	app.Commands = append(commands, tribeCommands...)
+	//TODO Iza
+	app.Commands =commands
+	//todo iza - before
+	//app.Commands = append(commands, tribeCommands...)
 	sort.Sort(ByCommand(app.Commands))
 	app.Before = beforeAction
 
@@ -85,39 +88,40 @@ func beforeAction(ctx *cli.Context) error {
 	}
 	pClient.Password = password
 	pClient.Username = username
-	if err = checkTribeCommand(ctx); err != nil {
-		return fmt.Errorf("%v", err)
-	}
+	//TODO Iza
+	//if err = checkTribeCommand(ctx); err != nil {
+	//	return fmt.Errorf("%v", err)
+	//}
 	return nil
 }
-
+//TODO Iza
 // Checks if a tribe command was issued when tribe mode was not
 // enabled on the specified snapteld instance.
-func checkTribeCommand(ctx *cli.Context) error {
-	tribe := false
-	for _, a := range os.Args {
-		for _, command := range tribeCommands {
-			if strings.Contains(a, command.Name) {
-				tribe = true
-				break
-			}
-		}
-		if tribe {
-			break
-		}
-	}
-	if !tribe {
-		return nil
-	}
-	resp := pClient.ListAgreements()
-	if resp.Err != nil {
-		if resp.Err.Error() == "Invalid credentials" {
-			return resp.Err
-		}
-		return fmt.Errorf("Tribe mode must be enabled in snapteld to use tribe command")
-	}
-	return nil
-}
+//func checkTribeCommand(ctx *cli.Context) error {
+//	tribe := false
+//	for _, a := range os.Args {
+//		for _, command := range tribeCommands {
+//			if strings.Contains(a, command.Name) {
+//				tribe = true
+//				break
+//			}
+//		}
+//		if tribe {
+//			break
+//		}
+//	}
+//	if !tribe {
+//		return nil
+//	}
+//	resp := pClient.ListAgreements()
+//	if resp.Err != nil {
+//		if resp.Err.Error() == "Invalid credentials" {
+//			return resp.Err
+//		}
+//		return fmt.Errorf("Tribe mode must be enabled in snapteld to use tribe command")
+//	}
+//	return nil
+//}
 
 // Checks for authentication flags and returns a username/password
 // from the specified settings

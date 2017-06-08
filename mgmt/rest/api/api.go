@@ -8,7 +8,8 @@ type API interface {
 	GetRoutes() []Route
 	BindMetricManager(Metrics)
 	BindTaskManager(Tasks)
-	BindTribeManager(Tribe)
+	//TODO Iza
+	//BindTribeManager(Tribe)
 	BindConfigManager(Config)
 }
 
