@@ -21,21 +21,22 @@ package tribe_event
 
 import "github.com/intelsdi-x/snap/core"
 
-const (
-	PluginAdded = "Tribe.PluginAdded"
-)
-
-type AddPluginEvent struct {
-	Agreement struct {
-		Name string
-	}
-	Plugin struct {
-		Name    string
-		Type    core.PluginType
-		Version int
-	}
-}
-
-func (e AddPluginEvent) Namespace() string {
-	return PluginAdded
-}
+//TODO Iza
+//const (
+//	PluginAdded = "Tribe.PluginAdded"
+//)
+//
+//type AddPluginEvent struct {
+//	Agreement struct {
+//		Name string
+//	}
+//	Plugin struct {
+//		Name    string
+//		Type    core.PluginType
+//		Version int
+//	}
+//}
+//
+//func (e AddPluginEvent) Namespace() string {
+//	return PluginAdded
+//}

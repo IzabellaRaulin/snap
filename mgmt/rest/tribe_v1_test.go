@@ -40,10 +40,12 @@ import (
 	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/core/tribe_event"
 	"github.com/intelsdi-x/snap/mgmt/rest/v1/rbody"
-	"github.com/intelsdi-x/snap/mgmt/tribe"
+	//todo iza
+	//"github.com/intelsdi-x/snap/mgmt/tribe"
 	"github.com/intelsdi-x/snap/scheduler"
 )
 
+//TODO Iza
 var (
 	tribeLogger = restLogger.WithFields(log.Fields{
 		"_module": "rest-tribe",

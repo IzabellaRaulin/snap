@@ -27,7 +27,8 @@ var (
 type apiV1 struct {
 	metricManager api.Metrics
 	taskManager   api.Tasks
-	tribeManager  api.Tribe
+	//todo iza
+	//tribeManager  api.Tribe
 	configManager api.Config
 
 	wg       *sync.WaitGroup
@@ -67,18 +68,19 @@ func (s *apiV1) GetRoutes() []api.Route {
 		api.Route{Method: "PUT", Path: prefix + "/tasks/:id/enable", Handle: s.enableTask},
 	}
 	// tribe routes
-	if s.tribeManager != nil {
-		routes = append(routes, []api.Route{
-			api.Route{Method: "GET", Path: prefix + "/tribe/agreements", Handle: s.getAgreements},
-			api.Route{Method: "POST", Path: prefix + "/tribe/agreements", Handle: s.addAgreement},
-			api.Route{Method: "GET", Path: prefix + "/tribe/agreements/:name", Handle: s.getAgreement},
-			api.Route{Method: "DELETE", Path: prefix + "/tribe/agreements/:name", Handle: s.deleteAgreement},
-			api.Route{Method: "PUT", Path: prefix + "/tribe/agreements/:name/join", Handle: s.joinAgreement},
-			api.Route{Method: "DELETE", Path: prefix + "/tribe/agreements/:name/leave", Handle: s.leaveAgreement},
-			api.Route{Method: "GET", Path: prefix + "/tribe/members", Handle: s.getMembers},
-			api.Route{Method: "GET", Path: prefix + "/tribe/member/:name", Handle: s.getMember},
-		}...)
-	}
+	// todo iza
+	//if s.tribeManager != nil {
+	//	routes = append(routes, []api.Route{
+	//		api.Route{Method: "GET", Path: prefix + "/tribe/agreements", Handle: s.getAgreements},
+	//		api.Route{Method: "POST", Path: prefix + "/tribe/agreements", Handle: s.addAgreement},
+	//		api.Route{Method: "GET", Path: prefix + "/tribe/agreements/:name", Handle: s.getAgreement},
+	//		api.Route{Method: "DELETE", Path: prefix + "/tribe/agreements/:name", Handle: s.deleteAgreement},
+	//		api.Route{Method: "PUT", Path: prefix + "/tribe/agreements/:name/join", Handle: s.joinAgreement},
+	//		api.Route{Method: "DELETE", Path: prefix + "/tribe/agreements/:name/leave", Handle: s.leaveAgreement},
+	//		api.Route{Method: "GET", Path: prefix + "/tribe/members", Handle: s.getMembers},
+	//		api.Route{Method: "GET", Path: prefix + "/tribe/member/:name", Handle: s.getMember},
+	//	}...)
+	//}
 	return routes
 }
 
@@ -90,9 +92,9 @@ func (s *apiV1) BindTaskManager(taskManager api.Tasks) {
 	s.taskManager = taskManager
 }
 
-func (s *apiV1) BindTribeManager(tribeManager api.Tribe) {
-	s.tribeManager = tribeManager
-}
+//func (s *apiV1) BindTribeManager(tribeManager api.Tribe) {
+//	s.tribeManager = tribeManager
+//}
 
 func (s *apiV1) BindConfigManager(configManager api.Config) {
 	s.configManager = configManager
