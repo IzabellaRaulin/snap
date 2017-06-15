@@ -293,6 +293,7 @@ func (p *pluginControl) HandleGomitEvent(e gomit.Event) {
 			}
 		}
 	case *control_event.UnloadPluginEvent:
+		fmt.Println("Debug Iza - unload plugin event")
 		serrs := p.subscriptionGroups.Process()
 		if serrs != nil {
 			for _, err := range serrs {

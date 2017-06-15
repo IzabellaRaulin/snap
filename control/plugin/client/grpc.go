@@ -311,6 +311,7 @@ func newGrpcClient(addr string, port int, timeout time.Duration, typ plugin.Plug
 }
 
 func getContext(timeout time.Duration) context.Context {
+	fmt.Println("Debug, iza - getContext in grpc")
 	ctxTimeout, _ := context.WithTimeout(context.Background(), timeout)
 	return ctxTimeout
 }
@@ -388,6 +389,7 @@ func (g *grpcClient) Process(metrics []core.Metric, config map[string]ctypes.Con
 }
 
 func (g *grpcClient) CollectMetrics(mts []core.Metric) ([]core.Metric, error) {
+	fmt.Println("Debug, iza - CollectMetrics in grpc")
 	arg := &rpc.MetricsArg{
 		Metrics: NewMetrics(mts),
 	}
@@ -530,6 +532,7 @@ func (g *grpcClient) handleInStream(
 }
 
 func (g *grpcClient) GetMetricTypes(config plugin.ConfigType) ([]core.Metric, error) {
+	fmt.Println("Debug, iza - grpcClient) GetMetricTypes")
 	arg := &rpc.GetMetricTypesArg{
 		Config: ToConfigMap(config.Table()),
 	}
@@ -640,6 +643,7 @@ func ToCoreMetric(mt *rpc.Metric) core.Metric {
 }
 
 func NewMetrics(ms []core.Metric) []*rpc.Metric {
+	fmt.Println("Debug, iza - NewMetrics from core.Metric to rpc.Metric")
 	metrics := make([]*rpc.Metric, len(ms))
 	for i, m := range ms {
 		metrics[i] = ToMetric(m)
