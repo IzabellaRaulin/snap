@@ -136,6 +136,7 @@ func (l *loadedPlugins) remove(key string) {
 }
 
 func (l *loadedPlugins) findLatest(typeName, name string) (*loadedPlugin, error) {
+	fmt.Println("Debug, Iza - loadedPlugins.findLatest!!!! type=%v, name=%v", typeName, name)
 	l.RLock()
 	defer l.RUnlock()
 
@@ -657,6 +658,7 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 
 // UnloadPlugin unloads a plugin from the LoadedPlugins table
 func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.SnapError) {
+	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin")
 	plugin, err := p.loadedPlugins.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pl.TypeName(), pl.Name(), pl.Version()))
 	if err != nil {
 		se := serror.New(ErrPluginNotFound, map[string]interface{}{
@@ -666,6 +668,10 @@ func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.Snap
 		})
 		return nil, se
 	}
+
+	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin name=%v, version=%v, type=%v", pl.Name(), pl.Version(), pl.TypeName())
+	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin details: path=%v, exec=%v, execPath=%v", plugin.Details.Path, plugin.Details.Exec, plugin.Details.ExecPath)
+
 
 	pmLogger.WithFields(log.Fields{
 		"_block": "unload-plugin",
@@ -713,10 +719,12 @@ func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.Snap
 		}).Debug("Nothing to delete as temp path is empty")
 	}
 
+	fmt.Println("Debug, Iza - plugin_manager.UnloadPlugin -> removing plugin.Key=%v", plugin.Key())
 	p.loadedPlugins.remove(plugin.Key())
 
 	// Remove any metrics from the catalog if this was a collector
 	if plugin.TypeName() == core.CollectorPluginType.String() || plugin.TypeName() == core.StreamingCollectorPluginType.String() {
+		fmt.Println("Debug, Iza - plugin_manager.UnloadPlugin -> removing metrics (because it's collector)")
 		p.metricCatalog.RmUnloadedPluginMetrics(plugin)
 	}
 

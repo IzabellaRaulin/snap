@@ -293,6 +293,7 @@ func (p *pluginControl) HandleGomitEvent(e gomit.Event) {
 			}
 		}
 	case *control_event.UnloadPluginEvent:
+		fmt.Println("Debug, Iza, plugin.Control - event unloadingPluginEvent")
 		serrs := p.subscriptionGroups.Process()
 		if serrs != nil {
 			for _, err := range serrs {
@@ -637,11 +638,13 @@ func (p *pluginControl) returnPluginDetails(rp *core.RequestedPlugin) (*pluginDe
 }
 
 func (p *pluginControl) Unload(pl core.Plugin) (core.CatalogedPlugin, serror.SnapError) {
+	fmt.Println("Debug, Iza - pluginControl.Unload")
 	up, err := p.pluginManager.UnloadPlugin(pl)
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println("Debug, Iza - pluginControl.Unload - emitting event")
 	event := &control_event.UnloadPluginEvent{
 		Name:    up.Meta.Name,
 		Version: up.Meta.Version,
@@ -652,6 +655,7 @@ func (p *pluginControl) Unload(pl core.Plugin) (core.CatalogedPlugin, serror.Sna
 }
 
 func (p *pluginControl) SwapPlugins(in *core.RequestedPlugin, out core.CatalogedPlugin) serror.SnapError {
+	fmt.Println("Debug, Iza - pluginControl.SwapPlugins")
 	details, serr := p.returnPluginDetails(in)
 	if serr != nil {
 		return serr
@@ -674,7 +678,9 @@ func (p *pluginControl) SwapPlugins(in *core.RequestedPlugin, out core.Cataloged
 			"in-name":  lp.Name(),
 			"out-name": out.Name(),
 		})
+		fmt.Println("Debug, Iza - pluginControl.SwapPlugins - trying to unload")
 		_, err := p.pluginManager.UnloadPlugin(lp)
+		fmt.Println("Debug, Iza - pluginControl.SwapPlugins - after trying to unload")
 		if err != nil {
 			se := serror.New(errors.New("Failed to rollback after error"))
 			se.SetFields(map[string]interface{}{
@@ -686,9 +692,13 @@ func (p *pluginControl) SwapPlugins(in *core.RequestedPlugin, out core.Cataloged
 		return serr
 	}
 
+	fmt.Println("Debug, Iza - pluginControl.SwapPlugins - trying to unload2")
 	up, err := p.pluginManager.UnloadPlugin(out)
+	fmt.Println("Debug, Iza - pluginControl.SwapPlugins - after trying to unload2")
 	if err != nil {
+		fmt.Println("Debug, Iza - pluginControl.SwapPlugins - trying to unload3")
 		_, err2 := p.pluginManager.UnloadPlugin(lp)
+		fmt.Println("Debug, Iza - pluginControl.SwapPlugins - after trying to unload3")
 		if err2 != nil {
 			se := serror.New(errors.New("Failed to rollback after error"))
 			se.SetFields(map[string]interface{}{

@@ -191,9 +191,11 @@ func (s subscriptionGroups) get(id string) (map[string]metricTypes, []serror.Sna
 // on the requested metrics (subscriptionGroup.requestedMetrics).  Similarly
 // the required plugins (subscriptionGroup.plugins) are also updated.
 func (s *subscriptionGroups) Process() (errs []serror.SnapError) {
+	fmt.Println("Debug, Iza subscriptionGroups.Process()")
 	s.Lock()
 	defer s.Unlock()
 	for id, group := range s.subscriptionMap {
+		fmt.Println("Debug, Iza subscriptionGroups id=%v, group=%v", id, group)
 		if serrs := group.process(id); serrs != nil {
 			errs = append(errs, serrs...)
 		}
@@ -346,6 +348,7 @@ func (s *subscriptionGroups) validateMetric(
 }
 
 func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
+	fmt.Println("Debug, Iza - subscriptionGroup.process for id=%v", id)
 	// gathers collectors based on requested metrics
 	pluginToMetricMap, plugins, serrs := s.getMetricsAndCollectors(s.requestedMetrics, s.configTree)
 	controlLogger.WithFields(log.Fields{
@@ -353,9 +356,15 @@ func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 		"metrics":    fmt.Sprintf("%+v", s.requestedMetrics),
 	}).Debug("gathered collectors")
 
+
+	fmt.Println("Debug, Iza - subscriptionGroup.process, pluginToMetricMap=%v", pluginToMetricMap)
+	fmt.Println("Debug, Iza - subscriptionGroup.process, plugins=%v", plugins)
+	fmt.Println("Debug, Iza - subscriptionGroup.process, requestedPlugins=%v", s.requestedPlugins)
+
 	for _, plugin := range s.requestedPlugins {
 		//add processors and publishers to collectors just gathered
 		if plugin.TypeName() != core.CollectorPluginType.String() {
+			//TODO Iza - why streaming collector is not included there?
 			plugins = append(plugins, plugin)
 			// add defaults to plugins (exposed in a plugins ConfigPolicy)
 			if lp, err := s.pluginManager.get(
@@ -364,6 +373,7 @@ func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 					plugin.Name(),
 					plugin.Version())); err == nil && lp.ConfigPolicy != nil {
 				if policy := lp.ConfigPolicy.Get([]string{""}); policy != nil && len(policy.Defaults()) > 0 {
+					// set defaults to plugin config
 					plugin.Config().ApplyDefaults(policy.Defaults())
 				}
 			}
@@ -371,11 +381,32 @@ func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 	}
 
 	// calculates those plugins that need to be subscribed and unsubscribed to
+	fmt.Println("Debug, Iza - subscriptionGroup.process - comparing plugins:")
+
+	//todo iza - remove it
+	for i, b := range s.plugins {
+		fmt.Println("Debug, Iza - subscriptionGroup.process - old plugin[%d]: name=%v, version=%v", i, b.Name(), b.Version())
+	}
+	for i, b := range plugins {
+		fmt.Println("Debug, Iza - subscriptionGroup.process - new plugin[%d]: name=%v, version=%v", i, b.Name(), b.Version())
+	}
+
+
 	subs, unsubs := comparePlugins(plugins, s.plugins)
 	controlLogger.WithFields(log.Fields{
 		"subs":   fmt.Sprintf("%+v", subs),
 		"unsubs": fmt.Sprintf("%+v", unsubs),
 	}).Debug("subscriptions")
+
+
+	//todo iza - remove it
+	for i, b1 := range subs {
+		fmt.Println("Debug, Iza - subscriptionGroup.process - adds_plugin[%d]: name=%v, version=%v", i, b1.Name(), b1.Version())
+	}
+	for i, b2 := range unsubs {
+		fmt.Println("Debug, Iza - subscriptionGroup.process - remove_plugin[%d]: name=%v, version=%v", i, b2.Name(), b2.Version())
+	}
+
 	if len(subs) > 0 {
 		if errs := s.subscribePlugins(id, subs); errs != nil {
 			serrs = append(serrs, errs...)
@@ -387,7 +418,7 @@ func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 		}
 	}
 
-	//updating view
+	// updating view
 	// metrics are grouped by plugin
 	s.metrics = pluginToMetricMap
 	s.plugins = plugins

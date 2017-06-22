@@ -307,6 +307,7 @@ func (p *pool) KillAll(reason string) {
 
 // SelectAndKill selects, kills and removes the available plugin from the pool
 func (p *pool) SelectAndKill(id, reason string) {
+
 	rp, err := p.Remove(p.plugins.Values(), id)
 	if err != nil {
 		log.WithFields(log.Fields{
