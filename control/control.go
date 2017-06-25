@@ -302,6 +302,7 @@ func (p *pluginControl) HandleGomitEvent(e gomit.Event) {
 				}).Error(err)
 			}
 		}
+		///todo iza tutaj usuwanie klucza
 	default:
 		runnerLog.WithFields(log.Fields{
 			"_block": "handle-events",
@@ -639,10 +640,19 @@ func (p *pluginControl) returnPluginDetails(rp *core.RequestedPlugin) (*pluginDe
 
 func (p *pluginControl) Unload(pl core.Plugin) (core.CatalogedPlugin, serror.SnapError) {
 	fmt.Println("Debug, Iza - pluginControl.Unload")
+
+	//todo iza - nie rob unload bez pewnosci, ze plugin nie jest wykorzystywany
+	//tu tylko czy jest załadowany i nic wiecej
 	up, err := p.pluginManager.UnloadPlugin(pl)
 	if err != nil {
 		return nil, err
 	}
+
+
+	errs := p.subscriptionGroups.ProcessRemoving(up)
+	fmt.Println("Debug, Iza - psubsciptionGroup - process removing, errs = %v", errs)
+	// tutaj processowanie subscrypcji mozna by dodać
+	//errs := p.subscriptionGroups.Process()
 
 	fmt.Println("Debug, Iza - pluginControl.Unload - emitting event")
 	event := &control_event.UnloadPluginEvent{

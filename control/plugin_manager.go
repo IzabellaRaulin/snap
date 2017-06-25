@@ -29,7 +29,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
+
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -659,6 +659,7 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 // UnloadPlugin unloads a plugin from the LoadedPlugins table
 func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.SnapError) {
 	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin")
+	//1.sprawdz czy jest zaladowany
 	plugin, err := p.loadedPlugins.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pl.TypeName(), pl.Name(), pl.Version()))
 	if err != nil {
 		se := serror.New(ErrPluginNotFound, map[string]interface{}{
@@ -669,6 +670,7 @@ func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.Snap
 		return nil, se
 	}
 
+	//todo iza - ta wersja jest zdefiniowana
 	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin name=%v, version=%v, type=%v", pl.Name(), pl.Version(), pl.TypeName())
 	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin details: path=%v, exec=%v, execPath=%v", plugin.Details.Path, plugin.Details.Exec, plugin.Details.ExecPath)
 
@@ -678,6 +680,7 @@ func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.Snap
 		"path":   plugin.Details.Exec,
 	}).Info("plugin unload called")
 
+	//2.sprawdz czy jest w odpowiednim stanie?
 	if plugin.State != LoadedState {
 		se := serror.New(ErrPluginNotInLoadedState, map[string]interface{}{
 			"plugin-name":    plugin.Name(),
@@ -686,50 +689,137 @@ func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.Snap
 		})
 		return nil, se
 	}
-
-	pmLogger.WithFields(log.Fields{
-		"plugin-type":    plugin.TypeName(),
-		"plugin-name":    plugin.Name(),
-		"plugin-version": plugin.Version(),
-		"plugin-path":    plugin.Details.Path,
-	}).Debugf("Removing plugin")
-	if strings.Contains(plugin.Details.Path, p.tempDirPath) {
-		if err := os.RemoveAll(filepath.Dir(plugin.Details.Path)); err != nil {
-			pmLogger.WithFields(log.Fields{
-				"plugin-type":    plugin.TypeName(),
-				"plugin-name":    plugin.Name(),
-				"plugin-version": plugin.Version(),
-				"plugin-path":    plugin.Details.Path,
-			}).Error(err)
-			se := serror.New(err)
-			se.SetFields(map[string]interface{}{
-				"plugin-type":    plugin.TypeName(),
-				"plugin-name":    plugin.Name(),
-				"plugin-version": plugin.Version(),
-				"plugin-path":    plugin.Details.Path,
-			})
-			return nil, se
-		}
-	} else {
-		pmLogger.WithFields(log.Fields{
-			"plugin-type":    plugin.TypeName(),
-			"plugin-name":    plugin.Name(),
-			"plugin-version": plugin.Version(),
-			"plugin-path":    plugin.Details.Path,
-		}).Debug("Nothing to delete as temp path is empty")
-	}
-
-	fmt.Println("Debug, Iza - plugin_manager.UnloadPlugin -> removing plugin.Key=%v", plugin.Key())
-	p.loadedPlugins.remove(plugin.Key())
-
-	// Remove any metrics from the catalog if this was a collector
-	if plugin.TypeName() == core.CollectorPluginType.String() || plugin.TypeName() == core.StreamingCollectorPluginType.String() {
-		fmt.Println("Debug, Iza - plugin_manager.UnloadPlugin -> removing metrics (because it's collector)")
-		p.metricCatalog.RmUnloadedPluginMetrics(plugin)
-	}
+// Iza - tu by było tylko sprawdzenie stanu i czy jest załadowany ;/
+	//pmLogger.WithFields(log.Fields{
+	//	"plugin-type":    plugin.TypeName(),
+	//	"plugin-name":    plugin.Name(),
+	//	"plugin-version": plugin.Version(),
+	//	"plugin-path":    plugin.Details.Path,
+	//}).Debugf("Removing plugin")
+	//
+	////X.usuwanie binarek z tempa
+	//if strings.Contains(plugin.Details.Path, p.tempDirPath) {
+	//	if err := os.RemoveAll(filepath.Dir(plugin.Details.Path)); err != nil {
+	//		pmLogger.WithFields(log.Fields{
+	//			"plugin-type":    plugin.TypeName(),
+	//			"plugin-name":    plugin.Name(),
+	//			"plugin-version": plugin.Version(),
+	//			"plugin-path":    plugin.Details.Path,
+	//		}).Error(err)
+	//		se := serror.New(err)
+	//		se.SetFields(map[string]interface{}{
+	//			"plugin-type":    plugin.TypeName(),
+	//			"plugin-name":    plugin.Name(),
+	//			"plugin-version": plugin.Version(),
+	//			"plugin-path":    plugin.Details.Path,
+	//		})
+	//		return nil, se
+	//	}
+	//} else {
+	//	pmLogger.WithFields(log.Fields{
+	//		"plugin-type":    plugin.TypeName(),
+	//		"plugin-name":    plugin.Name(),
+	//		"plugin-version": plugin.Version(),
+	//		"plugin-path":    plugin.Details.Path,
+	//	}).Debug("Nothing to delete as temp path is empty")
+	//}
+	//
+	////X.usuwanie klucza
+	//fmt.Println("Debug, Iza - plugin_manager.UnloadPlugin -> removing plugin.Key=%v", plugin.Key())
+	//p.loadedPlugins.remove(plugin.Key())
+	//
+	////X.usuwanie metryk
+	//// Remove any metrics from the catalog if this was a collector
+	//if plugin.TypeName() == core.CollectorPluginType.String() || plugin.TypeName() == core.StreamingCollectorPluginType.String() {
+	//	fmt.Println("Debug, Iza - plugin_manager.UnloadPlugin -> removing metrics (because it's collector)")
+	//	p.metricCatalog.RmUnloadedPluginMetrics(plugin)
+	//}
 
 	return plugin, nil
 }
+
+
+// stare
+//func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.SnapError) {
+//	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin")
+//	//1.sprawdz czy jest zaladowany
+//	plugin, err := p.loadedPlugins.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pl.TypeName(), pl.Name(), pl.Version()))
+//	if err != nil {
+//		se := serror.New(ErrPluginNotFound, map[string]interface{}{
+//			"plugin-name":    pl.Name(),
+//			"plugin-version": pl.Version(),
+//			"plugin-type":    pl.TypeName(),
+//		})
+//		return nil, se
+//	}
+//
+//	//todo iza - ta wersja jest zdefiniowana
+//	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin name=%v, version=%v, type=%v", pl.Name(), pl.Version(), pl.TypeName())
+//	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin details: path=%v, exec=%v, execPath=%v", plugin.Details.Path, plugin.Details.Exec, plugin.Details.ExecPath)
+//
+//
+//	pmLogger.WithFields(log.Fields{
+//		"_block": "unload-plugin",
+//		"path":   plugin.Details.Exec,
+//	}).Info("plugin unload called")
+//
+//	//2.sprawdz czy jest w odpowiednim stanie?
+//	if plugin.State != LoadedState {
+//		se := serror.New(ErrPluginNotInLoadedState, map[string]interface{}{
+//			"plugin-name":    plugin.Name(),
+//			"plugin-version": plugin.Version(),
+//			"plugin-type":    pl.TypeName(),
+//		})
+//		return nil, se
+//	}
+//
+//	pmLogger.WithFields(log.Fields{
+//		"plugin-type":    plugin.TypeName(),
+//		"plugin-name":    plugin.Name(),
+//		"plugin-version": plugin.Version(),
+//		"plugin-path":    plugin.Details.Path,
+//	}).Debugf("Removing plugin")
+//
+//	//X.usuwanie binarek z tempa
+//	if strings.Contains(plugin.Details.Path, p.tempDirPath) {
+//		if err := os.RemoveAll(filepath.Dir(plugin.Details.Path)); err != nil {
+//			pmLogger.WithFields(log.Fields{
+//				"plugin-type":    plugin.TypeName(),
+//				"plugin-name":    plugin.Name(),
+//				"plugin-version": plugin.Version(),
+//				"plugin-path":    plugin.Details.Path,
+//			}).Error(err)
+//			se := serror.New(err)
+//			se.SetFields(map[string]interface{}{
+//				"plugin-type":    plugin.TypeName(),
+//				"plugin-name":    plugin.Name(),
+//				"plugin-version": plugin.Version(),
+//				"plugin-path":    plugin.Details.Path,
+//			})
+//			return nil, se
+//		}
+//	} else {
+//		pmLogger.WithFields(log.Fields{
+//			"plugin-type":    plugin.TypeName(),
+//			"plugin-name":    plugin.Name(),
+//			"plugin-version": plugin.Version(),
+//			"plugin-path":    plugin.Details.Path,
+//		}).Debug("Nothing to delete as temp path is empty")
+//	}
+//
+//	//X.usuwanie klucza
+//	fmt.Println("Debug, Iza - plugin_manager.UnloadPlugin -> removing plugin.Key=%v", plugin.Key())
+//	p.loadedPlugins.remove(plugin.Key())
+//
+//	//X.usuwanie metryk
+//	// Remove any metrics from the catalog if this was a collector
+//	if plugin.TypeName() == core.CollectorPluginType.String() || plugin.TypeName() == core.StreamingCollectorPluginType.String() {
+//		fmt.Println("Debug, Iza - plugin_manager.UnloadPlugin -> removing metrics (because it's collector)")
+//		p.metricCatalog.RmUnloadedPluginMetrics(plugin)
+//	}
+//
+//	return plugin, nil
+//}
 
 // GenerateArgs generates the cli args to send when stating a plugin
 func (p *pluginManager) GenerateArgs(logLevel int) plugin.Arg {

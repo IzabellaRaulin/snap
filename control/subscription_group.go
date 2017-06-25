@@ -52,6 +52,7 @@ var (
 // manage subscription groups.
 type ManagesSubscriptionGroups interface {
 	Process() (errs []serror.SnapError)
+	ProcessRemoving(*loadedPlugin)(errs []serror.SnapError)
 	Add(id string, requested []core.RequestedMetric,
 		configTree *cdata.ConfigDataTree,
 		plugins []core.SubscribedPlugin) []serror.SnapError
@@ -202,7 +203,19 @@ func (s *subscriptionGroups) Process() (errs []serror.SnapError) {
 	}
 	return errs
 }
-
+//todo iza
+func (s *subscriptionGroups) ProcessRemoving(lp *loadedPlugin) (errs []serror.SnapError) {
+	fmt.Println("Debug, IzaAA subscriptionGroups.ProcessRemoving()")
+	s.Lock()
+	defer s.Unlock()
+	for id, group := range s.subscriptionMap {
+		fmt.Println("Debug, IzaAA subscriptionGroups id=%v, group=%v", id, group)
+		if serrs := group.processRemoving(id, lp); serrs != nil {
+			errs = append(errs, serrs...)
+		}
+	}
+	return errs
+}
 func (s *subscriptionGroups) ValidateDeps(requested []core.RequestedMetric,
 	plugins []core.SubscribedPlugin,
 	configTree *cdata.ConfigDataTree, asserts ...core.SubscribedPluginAssert) (serrs []serror.SnapError) {
@@ -347,6 +360,165 @@ func (s *subscriptionGroups) validateMetric(
 	return serrs
 }
 
+//todo iza - prawie jak compare
+//func (s *subscriptionGroup) updateSubscribedPlugin(id string, lp *loadedPlugin) (serrs []serror.SnapError) {
+//
+//}
+// todo iza
+func (s *subscriptionGroup) processRemoving(id string, lp *loadedPlugin) (serrs []serror.SnapError) {
+	fmt.Println("Debug, IzaAA - subscriptionGroup.processRemoving for id=%v", id)
+	// gathers collectors based on requested metrics
+
+	impact := false
+	//s.plugins - zawiera te pluginy, które zostały wcześniej zmatchowane do taska (jest tak collector mock 1, passthru i file publisher)
+	// wystarczy zobaczyc, czy wystepują tam podany plugin - > jeśli nie zrob return (nie trzeba sprawdzac metryk)
+
+	fmt.Println("Debug, IzaAA - subscriptionGroupprocessRemoving, co sie kryje w s.plugins:")
+ 	for _, plugin := range s.plugins {
+		if plugin.TypeName() == lp.TypeName() && plugin.Name() == lp.Name() && plugin.Version() == lp.Version() {
+			// task is using the plugin which is trying to be unloaded
+			impact = true
+		}
+		fmt.Println("Debug, IzaAA - subscriptionGroupprocessRemoving, co sie kryje w s.plugins=%v", plugin)
+	}
+
+	if impact == false {
+		// no impact on subscription group
+		return
+	}
+	//todo iza - plugins - to wyciąganie tych wszystkich, ktore są nam potrzebne
+	// todo iza - natomiast s.plugins to te, kotre obecnie są zasybsrybowane
+
+	pluginToMetricMap, plugins, serrs := s.getMetricsAndCollectors(s.requestedMetrics, s.configTree)
+	controlLogger.WithFields(log.Fields{
+		"collectors": fmt.Sprintf("%+v", plugins),
+		"metrics":    fmt.Sprintf("%+v", s.requestedMetrics),
+	}).Debug("gathered collectors")
+
+
+	fmt.Println("Debug, Iza - subscriptionGroup.processRemoving, co sie kryje w pluginToMetricMap:")
+	for a, b:= range pluginToMetricMap {
+		fmt.Println("Debug, IzaAA - a=%v, b=%v", a, b.Metrics())
+	}
+
+
+	// todo - na chwile obecną w plugins kryje sie tylko mock collector 1
+	fmt.Println("Debug, Iza - subscriptionGroup.processRemoving, co sie kryje w plugins")
+	for a, b:= range plugins {
+		fmt.Println("Debug, IzaAA - a=%v, b=%v", a, b)
+	}
+
+
+	// todo - w requestedPlugins kryje sie tylko publisher i processor
+	fmt.Println("Debug, Iza - subscriptionGroup.processRemoving, co sie kryje w requestedPlugins")
+	for _, rplugin := range s.requestedPlugins {
+		fmt.Println("Debug, IzaAA - a=%v, b=%v", rplugin)
+	}
+
+
+	for _, plugin := range s.requestedPlugins {
+		//add processors and publishers to collectors just gathered
+		if plugin.TypeName() != core.CollectorPluginType.String() {
+			//TODO Iza - why streaming collector is not included there?
+			plugins = append(plugins, plugin)
+			// add defaults to plugins (exposed in a plugins ConfigPolicy)
+			if lp, err := s.pluginManager.get(
+				fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d",
+					plugin.TypeName(),
+					plugin.Name(),
+					plugin.Version())); err == nil && lp.ConfigPolicy != nil {
+				if policy := lp.ConfigPolicy.Get([]string{""}); policy != nil && len(policy.Defaults()) > 0 {
+					// set defaults to plugin config
+					plugin.Config().ApplyDefaults(policy.Defaults())
+				}
+			}
+		}
+	}
+
+	// calculates those plugins that need to be subscribed and unsubscribed to
+	fmt.Println("Debug, Iza - subscriptionGroup.process - comparing plugins:")
+
+	//todo iza - remove it
+	for i, b := range s.plugins {
+		fmt.Println("Debug, Iza - subscriptionGroup.process - old plugin[%d]: name=%v, version=%v", i, b.Name(), b.Version())
+	}
+	for i, b := range plugins {
+		fmt.Println("Debug, Iza - subscriptionGroup.process - new plugin[%d]: name=%v, version=%v", i, b.Name(), b.Version())
+	}
+
+
+	pluginsWithoutUnloadedPlugins := []core.SubscribedPlugin{}
+
+	for _, plugin := range plugins {
+		if plugin.TypeName() != lp.TypeName() || plugin.Name() != lp.Name() && plugin.Version() != lp.Version() {
+			//jest to inny plugin ktory chcemy odladowac
+			pluginsWithoutUnloadedPlugins = append(pluginsWithoutUnloadedPlugins, plugin)
+		}
+	}
+
+	// ta metoda musi sie zmienic - to znaczy powinny być wszystkie + te, które są potrzebne
+	subs, unsubs := comparePlugins(pluginsWithoutUnloadedPlugins, s.plugins)
+	controlLogger.WithFields(log.Fields{
+		"subs":   fmt.Sprintf("%+v", subs),
+		"unsubs": fmt.Sprintf("%+v", unsubs),
+	}).Debug("subscriptions")
+
+
+	//todo iza - remove it
+	for i, b1 := range subs {
+		fmt.Println("Debug, Iza - subscriptionGroup.process - adds_plugin[%d]: name=%v, version=%v", i, b1.Name(), b1.Version())
+	}
+	for i, b2 := range unsubs {
+		fmt.Println("Debug, Iza - subscriptionGroup.process - remove_plugin[%d]: name=%v, version=%v", i, b2.Name(), b2.Version())
+	}
+
+	// gdy nic sie nie zmienia
+	if len(subs) == 0 && len(unsubs) == 0 {
+		fmt.Println("Debug, iza - brak wpływu na ten task")
+		return nil
+	}
+
+
+	if len(subs) < len(unsubs) {
+		fmt.Println("Debug, iza - chciał wiecej odsybskubować niz zasybskruboac, ale jak to sie ma dynamiczne metryki")
+		if lp.TypeName()== core.PublisherPluginType || lp.TypeName() == core.ProcessorPluginType {
+			se := serror.New(fmt.Errorf("This plugin %v:%v:%v cannot be unloded because it is used by running task %v and there is no replecement"),
+				lp.TypeName(), lp.Name(), lp.Version())
+			return append(serrs, se)
+		} else {
+			//sprawdzic tu wpływ odładowania kolektora
+
+		}
+
+
+		se := serror.New(fmt.Errorf("Iza - zlo sie dzieje"))
+		return append(serrs, se)
+	}
+
+
+
+
+	if len(subs) > 0 {
+		if errs := s.subscribePlugins(id, subs); errs != nil {
+			serrs = append(serrs, errs...)
+		}
+	}
+	if len(unsubs) > 0 {
+		if errs := s.unsubscribePlugins(id, unsubs); errs != nil {
+			serrs = append(serrs, errs...)
+		}
+	}
+
+	// updating view
+	// metrics are grouped by plugin
+	s.metrics = pluginToMetricMap
+	s.plugins = plugins
+	s.errors = serrs
+
+	return serrs
+}
+
+// process - original
 func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 	fmt.Println("Debug, Iza - subscriptionGroup.process for id=%v", id)
 	// gathers collectors based on requested metrics
