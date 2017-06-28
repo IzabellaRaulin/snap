@@ -670,6 +670,7 @@ func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.Snap
 		return nil, se
 	}
 
+
 	//todo iza - ta wersja jest zdefiniowana
 	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin name=%v, version=%v, type=%v", pl.Name(), pl.Version(), pl.TypeName())
 	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin details: path=%v, exec=%v, execPath=%v", plugin.Details.Path, plugin.Details.Exec, plugin.Details.ExecPath)
@@ -689,6 +690,8 @@ func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.Snap
 		})
 		return nil, se
 	}
+
+
 // Iza - tu by było tylko sprawdzenie stanu i czy jest załadowany ;/
 	//pmLogger.WithFields(log.Fields{
 	//	"plugin-type":    plugin.TypeName(),

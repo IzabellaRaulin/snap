@@ -612,6 +612,29 @@ func (mc *metricCatalog) GetPlugin(mns core.Namespace, ver int) (core.CatalogedP
 	return mt.Plugin, nil
 }
 
+func (mc *metricCatalog) GetPlugins(mns core.Namespace) ([]core.CatalogedPlugin, error) {
+	fmt.Println("Debug, Iza - metricCatalog.getPluginVersions, mns = %v", mns.String())
+	plugins := []core.CatalogedPlugin{}
+	mts, err := mc.tree.GetVersions2(mns.Strings())
+	if err != nil {
+		log.WithFields(log.Fields{
+			"_module": "control",
+			"_file":   "metrics.go,",
+			"_block":  "get-plugin",
+			"error":   err,
+		}).Error("error getting plugin")
+		return nil, err
+	}
+
+	for _, mt := range mts {
+		fmt.Println("Debug, Iza - metricCatalog.getPluginVersions, plugin name,version = %v, %v", mt.Plugin.Name(), mt.Plugin.Version())
+		plugins = append(plugins, mt.Plugin)
+	}
+
+
+	return plugins, nil
+}
+
 func appendIfMissing(keys []string, ns string) []string {
 	for _, key := range keys {
 		if ns == key {

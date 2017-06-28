@@ -218,6 +218,33 @@ func (mtt *mttNode) GetMetrics(ns []string, ver int) ([]*metricType, error) {
 	return mts, nil
 }
 
+//todo iza - ma zwracac wszystkie wersje nawet metryki z wildcardem,
+// GetMetrics returns all MTs at the given namespace in the queried version (or in the latest if ver < 1)
+// and does gather all the node's descendants if the namespace ends with an asterisk
+func (mtt *mttNode) GetVersions2(ns []string) ([]*metricType, error) {
+	nodes := []*mttNode{}
+	mts := []*metricType{}
+
+	if len(ns) == 0 {
+		return nil, errorEmptyNamespace()
+	}
+	// search returns all of the nodes fulfilling the 'ns'
+	// even for some of them there is no metric (empty node.mts)
+	nodes = mtt.search(nodes, ns)
+
+	for _, node := range nodes {
+		// take all versions
+		for _, mt := range node.mts {
+			mts = append(mts, mt)
+		}
+
+	}
+	if len(mts) == 0 {
+		return nil, errorMetricNotFound("/" + strings.Join(ns, "/"))
+	}
+	return mts, nil
+}
+
 // GetVersions returns all versions of MTs below the given namespace
 func (mtt *mttNode) GetVersions(ns []string) ([]*metricType, error) {
 	var nodes []*mttNode

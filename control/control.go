@@ -146,6 +146,7 @@ type catalogsMetrics interface {
 	Subscribe([]string, int) error
 	Unsubscribe([]string, int) error
 	GetPlugin(core.Namespace, int) (core.CatalogedPlugin, error)
+	GetPlugins(core.Namespace) ([]core.CatalogedPlugin, error)
 }
 
 type managesSigning interface {
@@ -648,9 +649,14 @@ func (p *pluginControl) Unload(pl core.Plugin) (core.CatalogedPlugin, serror.Sna
 		return nil, err
 	}
 
+	if errs := p.subscriptionGroups.ProcessRemoving(up); errs != nil {
+		fmt.Println("Debug, Iza - psubsciptionGroup - process removing, errs = %v", errs)
+		//todo iza - zwracaj jeden blad
+		return up, errs[0]
+	}
 
-	errs := p.subscriptionGroups.ProcessRemoving(up)
-	fmt.Println("Debug, Iza - psubsciptionGroup - process removing, errs = %v", errs)
+
+
 	// tutaj processowanie subscrypcji mozna by dodać
 	//errs := p.subscriptionGroups.Process()
 
@@ -770,6 +776,30 @@ func (p *pluginControl) verifyPlugin(lp *loadedPlugin) error {
 	}
 	return nil
 }
+
+////todo iza
+//func (p *pluginControl) getRequestedCollectors(requested []core.RequestedMetric) []core.CatalogedPlugin {
+//	var plugins []core.SubscribedPlugin
+//	for _, r := range requested {
+//
+//			// get all metric types available in metricCatalog which fulfill the requested namespace
+//			mts, _ := p.metricCatalog.GetMetrics(r.Namespace(), r.Version())
+//			//todo  iza - tyrzeba zrobić coś jak requestedCollectors (powinny mieć tylko name, type, , version)
+//			for _, mt := range mts {
+//
+//				requestedCollector := subscribedPlugin{
+//					name:     mt.Plugin.Name(),
+//					typeName: mt.Plugin.TypeName(),
+//					//set requested metric
+//					version:  r.Version(),
+//				}
+//				plugins =append(plugins, requestedCollector)
+//			}
+//				plugins =append(plugins, mt.Plugin)
+//	}
+//
+//	return plugins
+//}
 
 // getMetricsAndCollectors returns metrics to be collected grouped by plugin and collectors which are used to collect all of them
 func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric, configTree *cdata.ConfigDataTree) (map[string]metricTypes, []core.SubscribedPlugin, []serror.SnapError) {
@@ -971,6 +1001,10 @@ func (p *pluginControl) MetricExists(mns core.Namespace, ver int) bool {
 	return false
 }
 
+func (p *pluginControl) GetPlugins(ns core.Namespace) ([]core.CatalogedPlugin, error) {
+	return p.metricCatalog.GetPlugins(ns)
+}
+
 // CollectMetrics is a blocking call to collector plugins returning a collection
 // of metrics and errors.  If an error is encountered no metrics will be
 // returned.
@@ -988,6 +1022,7 @@ func (p *pluginControl) CollectMetrics(id string, allTags map[string]map[string]
 			"_block":                "CollectorMetrics",
 			"subscription-group-id": id,
 		}).Error(err)
+
 		errs = append(errs, err)
 		return
 	}
