@@ -652,7 +652,7 @@ func (p *pluginControl) Unload(pl core.Plugin) (core.CatalogedPlugin, serror.Sna
 		impactOnTasks := []string{}
 		for _, err := range errs {
 			taskId := err.Fields()["task-id"].(string)
-			impactOnTasks  = append(impactOnTasks, taskId)
+			impactOnTasks = append(impactOnTasks, taskId)
 		}
 		se := serror.New(errorPluginCannotBeUnloaded(impactOnTasks), map[string]interface{}{
 			"plugin-name":    pl.Name(),

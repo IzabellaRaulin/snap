@@ -84,7 +84,6 @@ func errorPluginCannotBeUnloaded(impactedTaskIDs []string) error {
 	return fmt.Errorf("%s:%s", ErrPluginCannotBeUnloaded, impactedTasks)
 }
 
-
 type pluginState string
 
 type loadedPlugins struct {

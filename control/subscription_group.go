@@ -61,7 +61,7 @@ type ManagesSubscriptionGroups interface {
 		plugins []core.SubscribedPlugin,
 		configTree *cdata.ConfigDataTree, asserts ...core.SubscribedPluginAssert) (serrs []serror.SnapError)
 	validateMetric(metric core.Metric) (serrs []serror.SnapError)
-	validatePluginUnloading(*loadedPlugin)(errs []serror.SnapError)
+	validatePluginUnloading(*loadedPlugin) (errs []serror.SnapError)
 }
 
 type subscriptionGroup struct {
@@ -380,8 +380,8 @@ func (s *subscriptionGroup) validatePluginUnloading(id string, plgToUnload *load
 		return nil
 	}
 	controlLogger.WithFields(log.Fields{
-		"_block": "subscriptionGroup.validatePluginUnloading",
-		"task-id": id,
+		"_block":           "subscriptionGroup.validatePluginUnloading",
+		"task-id":          id,
 		"plugin-to-unload": plgToUnload.Key(),
 	}).Debug("validating impact of unloading the plugin")
 
@@ -390,10 +390,10 @@ func (s *subscriptionGroup) validatePluginUnloading(id string, plgToUnload *load
 		plgs, err := s.GetPlugins(requestedMetric.Namespace())
 		if err != nil {
 			controlLogger.WithFields(log.Fields{
-				"_block": "subscriptionGroup.validatePluginUnloading",
-				"task-id": id,
+				"_block":           "subscriptionGroup.validatePluginUnloading",
+				"task-id":          id,
 				"plugin-to-unload": plgToUnload.Key(),
-				"err": err.Error(),
+				"err":              err.Error(),
 			}).Errorf("cannot get plugins exposing the requested metric `%s:%d`", requestedMetric.Namespace(), requestedMetric.Version())
 			return serror.New(err)
 		}
@@ -418,17 +418,17 @@ func (s *subscriptionGroup) validatePluginUnloading(id string, plgToUnload *load
 			// the requested metric is exposed only by the single plugin and there is no replacement
 			impacted = true
 			controlLogger.WithFields(log.Fields{
-					"_block": "subscriptionGroup.validatePluginUnloading",
-					"task-id": id,
-					"plugin-to-unload": plgToUnload.Key(),
-					"requested-on-metric": fmt.Sprintf("%s:%d", requestedMetric.Namespace(), requestedMetric.Version()),
+				"_block":              "subscriptionGroup.validatePluginUnloading",
+				"task-id":             id,
+				"plugin-to-unload":    plgToUnload.Key(),
+				"requested-on-metric": fmt.Sprintf("%s:%d", requestedMetric.Namespace(), requestedMetric.Version()),
 			}).Errorf("Unloading the plugin would cause missing in collection the requested metric")
 		}
 	}
 
- 	if impacted {
+	if impacted {
 		serr = serror.New(ErrPluginCannotBeUnloaded, map[string]interface{}{
-			"task-id": id,
+			"task-id":          id,
 			"plugin-to-unload": plgToUnload.Key(),
 		})
 	}
@@ -445,7 +445,7 @@ func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 
 	for _, plugin := range s.requestedPlugins {
 		// add processors and publishers to collectors just gathered
-		if plugin.TypeName() != core.CollectorPluginType.String()  {
+		if plugin.TypeName() != core.CollectorPluginType.String() {
 			//TODO Iza - why streaming collector is not included there?
 			plugins = append(plugins, plugin)
 			// add defaults to plugins (exposed in a plugins ConfigPolicy)

@@ -627,21 +627,24 @@ func TestSnapClient(t *testing.T) {
 				So(p3.Version, ShouldEqual, 3)
 				So(p3.Type, ShouldEqual, "publisher")
 			})
-			Convey("unload when only one plugin loaded", func() {
+			Convey("unload when only one plugin loaded and it is used by running task", func() {
 				p1 := c.GetPlugins(false)
 				So(p1.Err, ShouldBeNil)
 				So(len(p1.LoadedPlugins), ShouldEqual, 1)
 				So(p1.LoadedPlugins[0].Name, ShouldEqual, "mock")
 
 				p2 := c.UnloadPlugin("collector", "mock", 1)
-				So(p2.Err, ShouldBeNil)
-				So(p2.Name, ShouldEqual, "mock")
-				So(p2.Version, ShouldEqual, 1)
-				So(p2.Type, ShouldEqual, "collector")
+				So(p2.Err, ShouldNotBeNil)
+				So(p2.Err.Error(), ShouldStartWith, control.ErrPluginCannotBeUnloaded.Error())
 
-				p3 := c.GetPlugins(false)
-				So(p3.Err, ShouldBeNil)
-				So(len(p3.LoadedPlugins), ShouldEqual, 0)
+				//todo iza
+				//So(p2.Name, ShouldEqual, "mock")
+				//So(p2.Version, ShouldEqual, 1)
+				//So(p2.Type, ShouldEqual, "collector")
+				//
+				//p3 := c.GetPlugins(false)
+				//So(p3.Err, ShouldBeNil)
+				//So(len(p3.LoadedPlugins), ShouldEqual, 0)
 			})
 		})
 	})
