@@ -621,7 +621,6 @@ func (mc *metricCatalog) GetPlugins(mns core.Namespace) ([]core.CatalogedPlugin,
 	pluginsMap := map[string]core.CatalogedPlugin{}
 
 	mts, err := mc.tree.GetVersions(mns.Strings())
-
 	if err != nil {
 		log.WithFields(log.Fields{
 			"_module": "control",
@@ -637,7 +636,6 @@ func (mc *metricCatalog) GetPlugins(mns core.Namespace) ([]core.CatalogedPlugin,
 		key := mt.Plugin.Key()
 		pluginsMap[key] = mt.Plugin
 	}
-
 	for _, plg := range pluginsMap {
 		plugins = append(plugins, plg)
 	}
