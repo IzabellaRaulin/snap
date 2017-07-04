@@ -29,7 +29,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -47,7 +47,6 @@ import (
 	"github.com/intelsdi-x/snap/core"
 	"github.com/intelsdi-x/snap/core/cdata"
 	"github.com/intelsdi-x/snap/core/serror"
-	"os"
 )
 
 const (
@@ -66,8 +65,8 @@ var (
 	ErrPluginNotFound = errors.New("plugin not found")
 	// ErrPluginAlreadyLoaded - error message when a plugin is already loaded
 	ErrPluginAlreadyLoaded = errors.New("plugin is already loaded")
-	// ErrPluginCannotBeUnloaded - error message when a plugin cannot be unloaded (is already in use by running task)
-	ErrPluginCannotBeUnloaded = errors.New("Plugin is used by running task(s) and cannot be unloaded. Stop the task(s) before unloading it")
+	// ErrPluginCannotBeUnloaded - error message when a plugin cannot be unloaded because is already in use by running task(s)
+	ErrPluginCannotBeUnloaded = errors.New("Plugin is used by running task(s). Stop the task(s) to be able to unload the plugin")
 	// ErrPluginNotInLoadedState - error message when a plugin must ne in a loaded state
 	ErrPluginNotInLoadedState = errors.New("Plugin must be in a LoadedState")
 
@@ -75,6 +74,16 @@ var (
 
 	defaultManagerOpts = []pluginManagerOpt{optDefaultManagerSecurity()}
 )
+
+func errorPluginCannotBeUnloaded(impactedTaskIDs []string) error {
+	var impactedTasks string
+
+	for _, id := range impactedTaskIDs {
+		impactedTasks += fmt.Sprintf("\n%s", id)
+	}
+	return fmt.Errorf("%s:%s", ErrPluginCannotBeUnloaded, impactedTasks)
+}
+
 
 type pluginState string
 
@@ -139,7 +148,6 @@ func (l *loadedPlugins) remove(key string) {
 }
 
 func (l *loadedPlugins) findLatest(typeName, name string) (*loadedPlugin, error) {
-	fmt.Println("Debug, Iza - loadedPlugins.findLatest!!!! type=%v, name=%v", typeName, name)
 	l.RLock()
 	defer l.RUnlock()
 

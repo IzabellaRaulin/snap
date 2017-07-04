@@ -200,7 +200,6 @@ func newMetricType(ns core.Namespace, last time.Time, plugin *loadedPlugin) *met
 	}
 }
 
-// Key returns metric namespace and version
 func (m *metricType) Key() string {
 	return fmt.Sprintf("%s/%d", m.Namespace().String(), m.Version())
 }
@@ -212,7 +211,6 @@ func (m *metricType) Namespace() core.Namespace {
 func (m *metricType) Data() interface{} {
 	return m.data
 }
-
 
 func (m *metricType) LastAdvertisedTime() time.Time {
 	return m.lastAdvertisedTime
@@ -291,7 +289,6 @@ func (cp *catalogedPlugin) Version() int {
 	return cp.version
 }
 
-// Key returns type, name and version of the plugin exposing the following metric
 func (cp *catalogedPlugin) Key() string {
 	return fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", cp.TypeName(), cp.Name(), cp.Version())
 }

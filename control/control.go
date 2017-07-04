@@ -653,27 +653,26 @@ func (p *pluginControl) Unload(pl core.Plugin) (core.CatalogedPlugin, serror.Sna
 	}
 
 	if errs := p.subscriptionGroups.validatePluginUnloading(up); errs != nil {
-		se := serror.New(ErrPluginCannotBeUnloaded, map[string]interface{}{
+		impactOnTasks := []string{}
+		for _, err := range errs {
+			taskId := err.Fields()["task-id"].(string)
+			impactOnTasks  = append(impactOnTasks, taskId)
+		}
+		se := serror.New(errorPluginCannotBeUnloaded(impactOnTasks), map[string]interface{}{
 			"plugin-name":    pl.Name(),
 			"plugin-version": pl.Version(),
 			"plugin-type":    pl.TypeName(),
-			"task-id":       pl.TypeName(),
+			"impacted-tasks": impactOnTasks,
 		})
 		return nil, se
 	}
 
-	//todo iza - nie rob unload bez pewnosci, ze plugin nie jest wykorzystywany
-	//tu tylko czy jest załadowany i nic wiecej
-	//upIza, err := p.pluginManager.UnloadPlugin(pl)
-	//if err != nil {
-	//	return nil, err
-	//}
+	// unload the plugin means removing it from plugin catalog
+	// and, for collector plugins, removing its metrics from metric catalog
+	if _, err := p.pluginManager.UnloadPlugin(pl); err != nil {
+		return nil, err
+	}
 
-
-	// tutaj processowanie subscrypcji mozna by dodać
-	//errs := p.subscriptionGroups.Process()
-
-	fmt.Println("Debug, Iza - pluginControl.Unload - emitting event")
 	event := &control_event.UnloadPluginEvent{
 		Name:    up.Meta.Name,
 		Version: up.Meta.Version,
@@ -792,30 +791,6 @@ func (p *pluginControl) verifyPlugin(lp *loadedPlugin) error {
 	}
 	return nil
 }
-
-////todo iza
-//func (p *pluginControl) getRequestedCollectors(requested []core.RequestedMetric) []core.CatalogedPlugin {
-//	var plugins []core.SubscribedPlugin
-//	for _, r := range requested {
-//
-//			// get all metric types available in metricCatalog which fulfill the requested namespace
-//			mts, _ := p.metricCatalog.GetMetrics(r.Namespace(), r.Version())
-//			//todo  iza - tyrzeba zrobić coś jak requestedCollectors (powinny mieć tylko name, type, , version)
-//			for _, mt := range mts {
-//
-//				requestedCollector := subscribedPlugin{
-//					name:     mt.Plugin.Name(),
-//					typeName: mt.Plugin.TypeName(),
-//					//set requested metric
-//					version:  r.Version(),
-//				}
-//				plugins =append(plugins, requestedCollector)
-//			}
-//				plugins =append(plugins, mt.Plugin)
-//	}
-//
-//	return plugins
-//}
 
 // getMetricsAndCollectors returns metrics to be collected grouped by plugin and collectors which are used to collect all of them
 func (p *pluginControl) getMetricsAndCollectors(requested []core.RequestedMetric, configTree *cdata.ConfigDataTree) (map[string]metricTypes, []core.SubscribedPlugin, []serror.SnapError) {
@@ -1009,16 +984,16 @@ func (p *pluginControl) GetMetricVersions(ns core.Namespace) ([]core.CatalogedMe
 	return rmts, nil
 }
 
+func (p *pluginControl) GetPlugins(ns core.Namespace) ([]core.CatalogedPlugin, error) {
+	return p.metricCatalog.GetPlugins(ns)
+}
+
 func (p *pluginControl) MetricExists(mns core.Namespace, ver int) bool {
 	_, err := p.metricCatalog.GetMetric(mns, ver)
 	if err == nil {
 		return true
 	}
 	return false
-}
-
-func (p *pluginControl) GetPlugins(ns core.Namespace) ([]core.CatalogedPlugin, error) {
-	return p.metricCatalog.GetPlugins(ns)
 }
 
 // CollectMetrics is a blocking call to collector plugins returning a collection

@@ -363,8 +363,8 @@ func (s *subscriptionGroups) validateMetric(
 	return serrs
 }
 
-// pluginIsSubscribed returns true if a provided plugin has been found among subscribed plugins in the following
-// subscription group
+// pluginIsSubscribed returns true if a provided plugin has been found among subscribed plugins
+// in the following subscription group
 func (s *subscriptionGroup) pluginIsSubscribed(plugin *loadedPlugin) bool {
 	// range over subscribed plugins to find if the plugin is there
 	for _, sp := range s.plugins {
@@ -375,25 +375,30 @@ func (s *subscriptionGroup) pluginIsSubscribed(plugin *loadedPlugin) bool {
 	return false
 }
 
-
+// validatePluginUnloading verifies if a given plugin might be unloaded without causing running task failures
 func (s *subscriptionGroup) validatePluginUnloading(id string, plgToUnload *loadedPlugin) (serr serror.SnapError) {
+	impacted := false
 	if !s.pluginIsSubscribed(plgToUnload) {
 		// the plugin is not subscribed, so the task is not impacted by its unloading
 		return nil
 	}
-
 	controlLogger.WithFields(log.Fields{
 		"_block": "subscriptionGroup.validatePluginUnloading",
 		"task-id": id,
-		"plugin-key": plgToUnload.Key(),
+		"plugin-to-unload": plgToUnload.Key(),
 	}).Debug("validating impact of unloading the plugin")
 
 	for _, requestedMetric := range s.requestedMetrics {
 		// get all plugins exposing the requested metric
 		plgs, err := s.GetPlugins(requestedMetric.Namespace())
 		if err != nil {
-			//todo iza - improve err msg
-			serror.New(err)
+			controlLogger.WithFields(log.Fields{
+				"_block": "subscriptionGroup.validatePluginUnloading",
+				"task-id": id,
+				"plugin-to-unload": plgToUnload.Key(),
+				"err": err.Error(),
+			}).Errorf("cannot get plugins exposing the requested metric `%s:%d`", requestedMetric.Namespace(), requestedMetric.Version())
+			return serror.New(err)
 		}
 
 		// when requested version is fixed (greater than 0), take into account only plugins in the requested version
@@ -414,13 +419,24 @@ func (s *subscriptionGroup) validatePluginUnloading(id string, plgToUnload *load
 
 		if len(plgs) == 1 {
 			if plgs[0].Key() == plgToUnload.Key() {
+				impacted = true
 				// the requested metric is exposed only by the plugin to be unloaded
-				fmt.Println("\n\n\n\nDebug, Iza- to jest jedyny plugin!!!\n\n\n\n")
-				return serror.New(errors.New("Debug Iza - jedyny plugin, Nie odlaaduj"))
+				controlLogger.WithFields(log.Fields{
+					"_block": "subscriptionGroup.validatePluginUnloading",
+					"task-id": id,
+					"plugin-to-unload": plgToUnload.Key(),
+					"requested-on-metric": fmt.Sprintf("%s:%d", requestedMetric.Namespace(), requestedMetric.Version()),
+				}).Errorf("Unloading the plugin would cause missing the requested metric")
 			}
 		}
 	}
 
+ 	if impacted {
+		serr = serror.New(ErrPluginCannotBeUnloaded, map[string]interface{}{
+			"task-id": id,
+			"plugin-to-unload": plgToUnload.Key(),
+		})
+	}
 	return serr
 }
 
