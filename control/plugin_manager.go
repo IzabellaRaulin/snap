@@ -667,10 +667,7 @@ func (p *pluginManager) LoadPlugin(details *pluginDetails, emitter gomit.Emitter
 	}
 }
 
-
-// stare - todo iza, zobacz czy musi byc to core.Plugin
 func (p *pluginManager) UnloadPlugin(pl core.Plugin) (*loadedPlugin, serror.SnapError) {
-	fmt.Println("Debug, Iza - pluginManager.UnloadPlugin")
 	plugin, err := p.loadedPlugins.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pl.TypeName(), pl.Name(), pl.Version()))
 	if err != nil {
 		se := serror.New(ErrPluginNotFound, map[string]interface{}{
