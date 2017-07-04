@@ -414,17 +414,15 @@ func (s *subscriptionGroup) validatePluginUnloading(id string, plgToUnload *load
 			}
 		}
 
-		if len(plgs) == 1 {
-			if plgs[0].Key() == plgToUnload.Key() {
-				impacted = true
-				// the requested metric is exposed only by the plugin to be unloaded
-				controlLogger.WithFields(log.Fields{
+		if len(plgs) == 1 && plgs[0].Key() == plgToUnload.Key() {
+			// the requested metric is exposed only by the single plugin and there is no replacement
+			impacted = true
+			controlLogger.WithFields(log.Fields{
 					"_block": "subscriptionGroup.validatePluginUnloading",
 					"task-id": id,
 					"plugin-to-unload": plgToUnload.Key(),
 					"requested-on-metric": fmt.Sprintf("%s:%d", requestedMetric.Namespace(), requestedMetric.Version()),
-				}).Errorf("Unloading the plugin would cause missing the requested metric")
-			}
+			}).Errorf("Unloading the plugin would cause missing in collection the requested metric")
 		}
 	}
 
@@ -463,13 +461,12 @@ func (s *subscriptionGroup) process(id string) (serrs []serror.SnapError) {
 			}
 		}
 	}
-
+	// calculates those plugins that need to be subscribed and unsubscribed to
 	subs, unsubs := comparePlugins(plugins, s.plugins)
 	controlLogger.WithFields(log.Fields{
 		"subs":   fmt.Sprintf("%+v", subs),
 		"unsubs": fmt.Sprintf("%+v", unsubs),
 	}).Debug("subscriptions")
-
 	if len(subs) > 0 {
 		if errs := s.subscribePlugins(id, subs); errs != nil {
 			serrs = append(serrs, errs...)

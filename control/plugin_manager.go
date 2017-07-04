@@ -66,7 +66,7 @@ var (
 	// ErrPluginAlreadyLoaded - error message when a plugin is already loaded
 	ErrPluginAlreadyLoaded = errors.New("plugin is already loaded")
 	// ErrPluginCannotBeUnloaded - error message when a plugin cannot be unloaded because is already in use by running task(s)
-	ErrPluginCannotBeUnloaded = errors.New("Plugin is used by running task(s). Stop the task(s) to be able to unload the plugin")
+	ErrPluginCannotBeUnloaded = errors.New("Plugin is used by running task. Stop the task to be able to unload the plugin")
 	// ErrPluginNotInLoadedState - error message when a plugin must ne in a loaded state
 	ErrPluginNotInLoadedState = errors.New("Plugin must be in a LoadedState")
 
