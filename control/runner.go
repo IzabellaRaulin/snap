@@ -334,7 +334,6 @@ func (r *runner) HandleGomitEvent(e gomit.Event) {
 			}
 		}
 	case *control_event.PluginUnsubscriptionEvent:
-		fmt.Println("Debug, Iza - runner.go, getting PluginUnsubscriptionEvent")
 		runnerLog.WithFields(log.Fields{
 			"_block":         "subscribe-pool",
 			"event":          v.Namespace(),
@@ -403,11 +402,6 @@ func (r *runner) runPlugin(name string, details *pluginDetails) error {
 }
 
 func (r *runner) handleUnsubscription(pType, pName string, pVersion int, taskID string) error {
-	fmt.Println("Debug, Iza - runner.handleUnsubscription pType=%v, pName=%v, pVerion=%v, taskID=%v", pType, pName, pVersion, taskID)
-
-
-	fmt.Println("Debug, Iza - runner.handleUnsubscription - getting pool")
-
 	pool, err := r.availablePlugins.getPool(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pType, pName, pVersion))
 	if err != nil {
 		runnerLog.WithFields(log.Fields{
@@ -427,8 +421,6 @@ func (r *runner) handleUnsubscription(pType, pName string, pVersion int, taskID 
 		}).Error("pool not found")
 		return errors.New("pool not found")
 	}
-
-	fmt.Println("Debug, Iza - runner.handleUnsubscription pool.Count=%v, pool.SubscriptionCount()=%v", pool.Count(), pool.SubscriptionCount())
 	if pool.SubscriptionCount() < pool.Count() {
 		_, err := r.pluginManager.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pType, pName, pVersion))
 		if err != nil {
@@ -442,7 +434,6 @@ func (r *runner) handleUnsubscription(pType, pName string, pVersion int, taskID 
 				"error":                   err.Error(),
 			}).Error("unable to get loaded plugin")
 		}
-		fmt.Println("Debug, Iza - runner.handleUnsubscription - do pool.SelectAndKill")
 		pool.SelectAndKill(taskID, "unsubscription event")
 	}
 	return nil
