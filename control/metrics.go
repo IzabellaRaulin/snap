@@ -200,6 +200,7 @@ func newMetricType(ns core.Namespace, last time.Time, plugin *loadedPlugin) *met
 	}
 }
 
+// Key returns metric namespace and version
 func (m *metricType) Key() string {
 	return fmt.Sprintf("%s/%d", m.Namespace().String(), m.Version())
 }
@@ -211,6 +212,7 @@ func (m *metricType) Namespace() core.Namespace {
 func (m *metricType) Data() interface{} {
 	return m.data
 }
+
 
 func (m *metricType) LastAdvertisedTime() time.Time {
 	return m.lastAdvertisedTime
@@ -287,6 +289,11 @@ func (cp *catalogedPlugin) Name() string {
 
 func (cp *catalogedPlugin) Version() int {
 	return cp.version
+}
+
+// Key returns type, name and version of the plugin exposing the following metric
+func (cp *catalogedPlugin) Key() string {
+	return fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", cp.TypeName(), cp.Name(), cp.Version())
 }
 
 func (cp *catalogedPlugin) IsSigned() bool {
@@ -613,24 +620,30 @@ func (mc *metricCatalog) GetPlugin(mns core.Namespace, ver int) (core.CatalogedP
 }
 
 func (mc *metricCatalog) GetPlugins(mns core.Namespace) ([]core.CatalogedPlugin, error) {
-	fmt.Println("Debug, Iza - metricCatalog.getPluginVersions, mns = %v", mns.String())
 	plugins := []core.CatalogedPlugin{}
-	mts, err := mc.tree.GetVersions2(mns.Strings())
+	pluginsMap := map[string]core.CatalogedPlugin{}
+
+	mts, err := mc.tree.GetVersions(mns.Strings())
+
 	if err != nil {
 		log.WithFields(log.Fields{
 			"_module": "control",
 			"_file":   "metrics.go,",
-			"_block":  "get-plugin",
+			"_block":  "get-plugins",
 			"error":   err,
 		}).Error("error getting plugin")
 		return nil, err
 	}
-
 	for _, mt := range mts {
-		fmt.Println("Debug, Iza - metricCatalog.getPluginVersions, plugin name,version = %v, %v", mt.Plugin.Name(), mt.Plugin.Version())
-		plugins = append(plugins, mt.Plugin)
+		// iterate over metrics and add the plugin which exposes the following metric to a map
+		// under plugin key to ensure that plugins do not repeat
+		key := mt.Plugin.Key()
+		pluginsMap[key] = mt.Plugin
 	}
 
+	for _, plg := range pluginsMap {
+		plugins = append(plugins, plg)
+	}
 
 	return plugins, nil
 }

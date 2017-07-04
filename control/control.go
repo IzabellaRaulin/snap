@@ -642,19 +642,32 @@ func (p *pluginControl) returnPluginDetails(rp *core.RequestedPlugin) (*pluginDe
 func (p *pluginControl) Unload(pl core.Plugin) (core.CatalogedPlugin, serror.SnapError) {
 	fmt.Println("Debug, Iza - pluginControl.Unload")
 
+	up, err := p.pluginManager.get(fmt.Sprintf("%s"+core.Separator+"%s"+core.Separator+"%d", pl.TypeName(), pl.Name(), pl.Version()))
+	if err != nil {
+		se := serror.New(ErrPluginNotFound, map[string]interface{}{
+			"plugin-name":    pl.Name(),
+			"plugin-version": pl.Version(),
+			"plugin-type":    pl.TypeName(),
+		})
+		return nil, se
+	}
+
+	if errs := p.subscriptionGroups.validatePluginUnloading(up); errs != nil {
+		se := serror.New(ErrPluginCannotBeUnloaded, map[string]interface{}{
+			"plugin-name":    pl.Name(),
+			"plugin-version": pl.Version(),
+			"plugin-type":    pl.TypeName(),
+			"task-id":       pl.TypeName(),
+		})
+		return nil, se
+	}
+
 	//todo iza - nie rob unload bez pewnosci, ze plugin nie jest wykorzystywany
 	//tu tylko czy jest załadowany i nic wiecej
-	up, err := p.pluginManager.UnloadPlugin(pl)
-	if err != nil {
-		return nil, err
-	}
-
-	if errs := p.subscriptionGroups.ProcessRemoving(up); errs != nil {
-		fmt.Println("Debug, Iza - psubsciptionGroup - process removing, errs = %v", errs)
-		//todo iza - zwracaj jeden blad
-		return up, errs[0]
-	}
-
+	//upIza, err := p.pluginManager.UnloadPlugin(pl)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 
 	// tutaj processowanie subscrypcji mozna by dodać
@@ -669,6 +682,9 @@ func (p *pluginControl) Unload(pl core.Plugin) (core.CatalogedPlugin, serror.Sna
 	defer p.eventManager.Emit(event)
 	return up, nil
 }
+
+
+
 
 func (p *pluginControl) SwapPlugins(in *core.RequestedPlugin, out core.CatalogedPlugin) serror.SnapError {
 	fmt.Println("Debug, Iza - pluginControl.SwapPlugins")
