@@ -1,5 +1,5 @@
-hash: 14712d189ae570ecb1e287d5a11120347c831b9b4bb6b2265eecb53acf52dc9d
-updated: 2017-05-18T11:52:57.349827646-07:00
+hash: 2f82bd198aa01992cdc05064ee7e13cd3e15b2eb540a7ac8fbc16e37412f4b1d
+updated: 2017-07-28T20:29:32.270050527+02:00
 imports:
 - name: github.com/appc/spec
   version: ba99d6b8ccbbed2942e53eb5395fddae113cdf8e
@@ -25,6 +25,7 @@ imports:
   version: 888eb0692c857ec880338addf316bd662d5e630e
   subpackages:
   - proto
+  - ptypes/any
 - name: github.com/hashicorp/go-msgpack
   version: fa3f63826f7c23912c15263591e65d54d080b458
   subpackages:
@@ -35,13 +36,8 @@ imports:
   version: db68f6fda248706a71980abc58e969fcd63f5ea6
 - name: github.com/intelsdi-x/snap-plugin-lib-go
   version: a8b9252d1c8305deb3c24495f1e9ce26607fcbd7
-  subpackages:
-  - v1/plugin
-  - v1/plugin/rpc
 - name: github.com/intelsdi-x/snap-plugin-utilities
   version: 3c37e3965f3fc2f24714779d3bae7ba7032b87a9
-  subpackages:
-  - str
 - name: github.com/julienschmidt/httprouter
   version: 8c199fb6259ffc1af525cc3ad52ee60ba8359669
 - name: github.com/pborman/uuid
@@ -84,11 +80,12 @@ imports:
   - openpgp/s2k
   - ssh/terminal
 - name: golang.org/x/net
-  version: 04557861f124410b768b1ba5bb3a91b705afbfc6
+  version: 054b33e6527139ad5b1ec2f6232c3b175bd9a30c
   subpackages:
   - context
   - http2
   - http2/hpack
+  - idna
   - internal/timeseries
   - lex/httplex
   - trace
@@ -96,16 +93,32 @@ imports:
   version: e62c3de784db939836898e5c19ffd41bece347da
   subpackages:
   - unix
+- name: golang.org/x/text
+  version: 836efe42bb4aa16aaa17b9c155d8813d336ed720
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+- name: google.golang.org/genproto
+  version: b0a3dcfcd1a9bd48e63634bd8802960804cf8315
+  subpackages:
+  - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 0032a855ba5c8a3c8e0d71c2deef354b70af1584
+  version: 172ccacff3cfbddedcf1ba5ea06cda943bc976c1
   subpackages:
   - codes
   - credentials
+  - grpclb/grpc_lb_v1
   - grpclog
   - internal
+  - keepalive
   - metadata
   - naming
   - peer
+  - stats
+  - status
+  - tap
   - transport
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
