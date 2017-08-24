@@ -17,10 +17,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# snaptel
-A powerful telemetry framework
+# Controling Snap framework 
+Snap daemon can be controlled in a few ways. This document focuses on `snaptel` - Snap CLI client bundled with Snap. Below you can find some alternatives.
 
-## Usage
+## Alternatives to `snaptel`
+### `snap-client-go`
+Snap describes its API v2 using [Swagger](https://swagger.io/docs/) and exposes `swagger.json` file that allows client to be generated in almost any programming language without much effort. One of such clients is [snap-client-go](https://github.com/intelsdi-x/snap-client-go) generated in Golang, which allows to programmatically control alomst any aspect of Snap framework.
+
+### Experimental `snap-cli`
+`snaptel` shares some internal logic with Snap and uses API v1. In addition to `snaptel` provided by Snap, there is also an [experimental CLI client](https://github.com/intelsdi-x/snap-cli), which achieves almost full parity with Snap's `snaptel` and communicates over API v2 using `snap-client-go` under the hood.
+
+#### Notes
+* `snap-cli` is independent of Snap and can be therefore used on machines without Snap present.
+* For the time being both `snaptel` and `snap-cli` are developed in parallel and deprecation is not planned.
+
+## `snaptel`
 The `snap-telemetry` package installs `snaptel` in `/usr/local/sbin/snaptel`, and `snapteld` in `/usr/local/sbin/snapteld`. Either ensure `/usr/local/bin:/usr/local/sbin` is in your path, or use fully qualified filepath to the `snaptel`/`snapteld` binary:
 
 ```
